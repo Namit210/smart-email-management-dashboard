@@ -6,6 +6,10 @@ const path = require('path');
 const fs = require('fs');
 
 dotenv.config();
+if (!process.env.GEMINI_API_KEY) {
+  dotenv.config({ path: path.join(__dirname, '../.env') });
+  dotenv.config({ path: path.join(__dirname, '../../.env') });
+}
 
 const authRoutes = require('./routes/auth.routes');
 const emailRoutes = require('./routes/email.routes');

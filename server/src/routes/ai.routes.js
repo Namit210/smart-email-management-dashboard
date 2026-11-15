@@ -12,7 +12,7 @@ router.post('/ask', async (req, res) => {
     }
 
     const emails = await Email.find({ status: { $ne: 'archived' } }).sort({ receivedAt: -1 });
-    const response = answerCopilotQuestion(question, emails);
+    const response = await answerCopilotQuestion(question, emails);
 
     res.json({ success: true, ...response });
   } catch (err) {
@@ -23,7 +23,7 @@ router.post('/ask', async (req, res) => {
 // Generate or customize draft reply
 router.post('/generate-draft', async (req, res) => {
   try {
-    const { emailId, tone, promptModifier } = req.body;
+    const { emailId, tone } = req.body;
     const email = await Email.findById(emailId);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email not found' });
@@ -51,7 +51,7 @@ router.post('/re-analyze/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Email not found' });
     }
 
-    const analysis = analyzeEmail(email);
+    const analysis = await analyzeEmail(email);
     Object.assign(email, analysis);
     email.manualOverride = false;
     await email.save();

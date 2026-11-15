@@ -354,7 +354,7 @@ router.post('/simulate', async (req, res) => {
     };
 
     // AI Analysis
-    const analysis = analyzeEmail(emailData);
+    const analysis = await analyzeEmail(emailData);
 
     const newEmail = await Email.create({
       ...emailData,
@@ -384,7 +384,7 @@ router.post('/reset', async (req, res) => {
     
     // Reseed
     for (const email of SAMPLE_EMAILS) {
-      const aiAnalysis = analyzeEmail(email);
+      const aiAnalysis = await analyzeEmail(email);
       await Email.create({
         ...email,
         ...aiAnalysis

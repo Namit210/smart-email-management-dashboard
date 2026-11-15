@@ -419,7 +419,7 @@ async function seedDatabase() {
     const existingEmails = await Email.countDocuments();
     if (existingEmails === 0) {
       for (const email of SAMPLE_EMAILS) {
-        const aiAnalysis = analyzeEmail(email);
+        const aiAnalysis = await analyzeEmail(email);
         await Email.create({
           ...email,
           ...aiAnalysis

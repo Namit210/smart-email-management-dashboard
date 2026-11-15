@@ -1,11 +1,27 @@
 /**
- * AI Classification & Inbox Intelligence Engine
- * Supports dual-mode:
- * 1. Deep Contextual Rule & NLP Heuristics Engine (offline, deterministic, fast, zero failure rate)
- * 2. Optional Google Gemini API integration when GEMINI_API_KEY is supplied.
+ * OmniMail AI - Intelligent Email Triage & Inbox Intelligence Engine
+ * Dual-Mode Engine:
+ * 1. Real Google Gemini AI (via @google/genai SDK when GEMINI_API_KEY is configured in .env)
+ * 2. High-Fidelity Local Contextual NLP Heuristics Engine (offline fallback with 100% uptime)
  */
 
-// Heuristic keyword clusters
+const { GoogleGenAI } = require('@google/genai');
+
+// Initialize Gemini Client if API key is present
+let geminiClient = null;
+function getGeminiClient() {
+  if (!geminiClient && process.env.GEMINI_API_KEY) {
+    try {
+      geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      console.log('✨ [AI Engine] Google Gemini AI initialized with API Key.');
+    } catch (e) {
+      console.warn('⚠️ [AI Engine] Failed to initialize Google Gemini client:', e.message);
+    }
+  }
+  return geminiClient;
+}
+
+// Heuristic keyword clusters (for offline fallback)
 const CLIENT_REPLY_TRIGGERS = [
   'personal approval', 'your approval', 'need your approval', 'contract review', 'sign off',
   'wire transfer', 'investor update', 'term sheet', 'board resolution', 'equity', 'salary',
@@ -30,15 +46,124 @@ const NO_REPLY_TRIGGERS = [
 ];
 
 /**
- * Analyze email content and conversation history to determine:
- * - classification: assistant_reply | client_reply | no_reply_needed | needs_review
- * - reasoning
- * - confidence
- * - summary, key takeaways, action items
- * - meetings & appointments
- * - reply draft suggestions
+ * Main classification entrypoint - tries Gemini first, falls back to heuristics
  */
-function analyzeEmail(emailData) {
+async function analyzeEmail(emailData) {
+  const client = getGeminiClient();
+
+  if (client) {
+    try {
+      const geminiResult = await classifyWithGemini(client, emailData);
+      if (geminiResult) {
+        return geminiResult;
+      }
+    } catch (err) {
+      console.warn('⚠️ [AI Engine] Gemini API call failed or timed out. Falling back to local NLP heuristics:', err.message);
+    }
+  }
+
+  // Fallback to local deterministic heuristics
+  return analyzeEmailHeuristics(emailData);
+}
+
+/**
+ * Call real Google Gemini model for structured email triage
+ */
+async function classifyWithGemini(client, emailData) {
+  const prompt = `
+You are an executive email triage AI assisting a Personal Assistant for CEO Alex Morgan.
+Analyze the following email conversation and determine who is responsible for responding:
+
+EMAIL TO ANALYZE:
+- Sender: "${emailData.sender?.name || 'Unknown'}" <${emailData.sender?.email || 'N/A'}>
+- Subject: "${emailData.subject || ''}"
+- Snippet: "${emailData.snippet || ''}"
+- Body Content:
+"""
+${emailData.body || emailData.snippet || ''}
+"""
+
+REPLY RESPONSIBILITY CRITERIA:
+1. "assistant_reply": Calendar scheduling or rescheduling, administrative inquiries, vendor invoices, travel logistics, document forwarding, routine coordination.
+2. "client_reply": Direct executive approvals, contracts requiring signature, confidential investor or board matters, bank wire authorizations, personal decisions that cannot be delegated.
+3. "no_reply_needed": Automated newsletters, receipts, flight confirmations, marketing updates, resolved threads.
+4. "needs_review": Ambiguous, missing context, or low confidence.
+
+Return ONLY a valid JSON object with the exact keys:
+{
+  "classification": "assistant_reply" | "client_reply" | "no_reply_needed" | "needs_review",
+  "classificationReason": "Clear, concise 1-2 sentence explanation of why this responsibility was assigned",
+  "confidence": number between 70 and 98,
+  "category": "Assistant to Reply" | "Client to Reply" | "No Reply Needed" | "Action Required" | "Meetings & Appointments" | "General",
+  "urgency": "urgent" | "high" | "normal" | "low",
+  "aiSummary": "1-2 sentence executive briefing for the assistant and client",
+  "keyPoints": ["bullet point 1", "bullet point 2"],
+  "actionItems": [
+    { "text": "description of task", "assignedTo": "assistant" | "client" }
+  ],
+  "extractedMeeting": {
+    "detected": true | false,
+    "title": "Meeting title or blank",
+    "date": "Proposed date or blank",
+    "time": "Proposed time or blank",
+    "duration": "30 mins",
+    "location": "Zoom / Google Meet / Location or blank"
+  },
+  "drafts": [
+    { "tone": "professional", "subject": "Re: ${emailData.subject}", "body": "Professional draft reply..." },
+    { "tone": "concise", "subject": "Re: ${emailData.subject}", "body": "Concise draft reply..." },
+    { "tone": "friendly", "subject": "Re: ${emailData.subject}", "body": "Friendly draft reply..." }
+  ]
+}
+`;
+
+  const response = await client.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json'
+    }
+  });
+
+  const text = response.text?.trim();
+  if (!text) return null;
+
+  // Clean JSON markdown fences if returned
+  const cleaned = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+  const parsed = JSON.parse(cleaned);
+
+  const clientRequired = parsed.classification === 'client_reply';
+
+  return {
+    classification: parsed.classification || 'assistant_reply',
+    classificationReason: parsed.classificationReason || 'Analyzed with Gemini AI.',
+    confidence: parsed.confidence || 88,
+    category: parsed.category || (clientRequired ? 'Client to Reply' : 'Assistant to Reply'),
+    urgency: parsed.urgency || 'normal',
+    aiSummary: parsed.aiSummary || emailData.snippet,
+    keyPoints: parsed.keyPoints || [],
+    actionItems: parsed.actionItems || [],
+    extractedMeeting: parsed.extractedMeeting || { detected: false },
+    clientAttention: {
+      required: clientRequired,
+      reason: parsed.classificationReason || 'Client decision needed.',
+      handled: false,
+      delegatedToAssistant: false,
+      delegatedNote: '',
+      clientDecision: ''
+    },
+    replyDraft: {
+      drafts: parsed.drafts || generateDrafts(emailData, parsed.classification, parsed.extractedMeeting?.detected),
+      activeDraftText: parsed.drafts?.[0]?.body || '',
+      status: 'drafted'
+    }
+  };
+}
+
+/**
+ * Local Deterministic NLP Heuristics Engine (Runs with zero latency and 100% reliability)
+ */
+function analyzeEmailHeuristics(emailData) {
   const subject = (emailData.subject || '').toLowerCase();
   const body = (emailData.body || emailData.snippet || '').toLowerCase();
   const senderEmail = (emailData.sender?.email || '').toLowerCase();
@@ -53,18 +178,15 @@ function analyzeEmail(emailData) {
   let clientReason = '';
   let extractedMeeting = { detected: false };
 
-  // 1. Check No Reply Needed triggers
   const isNoReply = NO_REPLY_TRIGGERS.some(trigger => fullText.includes(trigger)) ||
     senderEmail.includes('no-reply') ||
     senderEmail.includes('noreply') ||
     subject.includes('receipt') ||
     subject.includes('newsletter');
 
-  // 2. Check Client to Reply triggers
   const clientScore = CLIENT_REPLY_TRIGGERS.filter(trigger => fullText.includes(trigger)).length;
   const assistantScore = ASSISTANT_REPLY_TRIGGERS.filter(trigger => fullText.includes(trigger)).length;
 
-  // 3. Meeting detection
   const hasMeetingIntent = /meeting|schedule|reschedule|call|zoom|calendar|availability|appointment|sync|catch up/i.test(fullText);
   if (hasMeetingIntent) {
     const isTomorrow = /tomorrow/i.test(fullText);
@@ -73,7 +195,7 @@ function analyzeEmail(emailData) {
 
     extractedMeeting = {
       detected: true,
-      title: emailData.subject ? `Meeting: ${emailData.subject.replace(/^(re:|fwd:)\s*/i, '')}` : 'Scheduled Call',
+      title: emailData.subject ? `Meeting: ${emailData.subject.replace(/^(re:|fwd:)\s*/i, '')}` : 'Scheduled Sync',
       date: isTomorrow ? 'Tomorrow' : (isNextWeek ? 'Next Week' : 'Upcoming'),
       time: timeMatch ? timeMatch[0].toUpperCase() : '2:00 PM EST',
       duration: '30 mins',
@@ -82,10 +204,9 @@ function analyzeEmail(emailData) {
     };
   }
 
-  // Determine classification logic
   if (isNoReply && clientScore === 0) {
     classification = 'no_reply_needed';
-    classificationReason = 'AI detected this is an informational notification or newsletter requiring no response.';
+    classificationReason = 'Informational notification or newsletter requiring no response.';
     confidence = 94;
     category = 'No Reply Needed';
     urgency = 'low';
@@ -123,7 +244,6 @@ function analyzeEmail(emailData) {
       classificationReason = 'Standard administrative communication and follow-up assigned to personal assistant.';
     }
   } else {
-    // If ambiguous and no strong indicators
     if (fullText.length < 40) {
       classification = 'needs_review';
       classificationReason = 'Low context detected. Flagged for assistant manual review.';
@@ -137,7 +257,6 @@ function analyzeEmail(emailData) {
     }
   }
 
-  // Generate AI Summary
   const rawBody = (emailData.body || emailData.snippet || '').trim();
   let aiSummary = '';
   if (classification === 'client_reply') {
@@ -150,7 +269,6 @@ function analyzeEmail(emailData) {
     aiSummary = `Automated update / notification regarding "${emailData.subject}". Stored for informational records.`;
   }
 
-  // Action items extraction
   const actionItems = [];
   if (classification === 'client_reply') {
     actionItems.push({
@@ -184,14 +302,12 @@ function analyzeEmail(emailData) {
     }
   }
 
-  // Key points
   const keyPoints = [
     `Sender: ${emailData.sender?.name || 'Contact'} (${emailData.sender?.email || 'N/A'})`,
     `Primary intent: ${hasMeetingIntent ? 'Meeting Scheduling' : (classification === 'client_reply' ? 'Executive Decision / Approval' : 'Operational Inquiry')}`,
     `Suggested workflow: ${classification === 'client_reply' ? 'Client personal attention' : (classification === 'assistant_reply' ? 'Assistant handled' : 'Archive / FYI only')}`
   ];
 
-  // Reply Drafts
   const drafts = generateDrafts(emailData, classification, hasMeetingIntent);
 
   return {
@@ -288,9 +404,63 @@ function generateDrafts(email, classification, hasMeeting) {
 
 /**
  * AI Inbox Copilot Q&A
- * Answers user natural language questions about their emails
+ * Answers assistant questions using Gemini when available, or heuristic synthesis
  */
-function answerCopilotQuestion(question, emails) {
+async function answerCopilotQuestion(question, emails) {
+  const client = getGeminiClient();
+
+  if (client) {
+    try {
+      const emailContext = emails.slice(0, 15).map((e, idx) => `
+[${idx + 1}] Subject: "${e.subject}"
+From: ${e.sender.name} (${e.sender.email})
+Classification: ${e.classification}
+Summary: ${e.aiSummary || e.snippet}
+Urgency: ${e.urgency}
+Meeting Detected: ${e.extractedMeeting?.detected ? `${e.extractedMeeting.title} on ${e.extractedMeeting.date} at ${e.extractedMeeting.time}` : 'None'}
+Status: ${e.status}
+`).join('\n');
+
+      const prompt = `
+You are an executive inbox copilot for a personal assistant managing emails for client Alex Morgan.
+Answer the assistant's question accurately using only the email context below:
+
+CURRENT ACTIVE EMAILS:
+${emailContext}
+
+ASSISTANT'S QUESTION:
+"${question}"
+
+Provide a concise, direct, professional answer summarizing the status, highlighting pending client decisions, or identifying next actions.
+`;
+
+      const response = await client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
+
+      const answerText = response.text?.trim();
+      if (answerText) {
+        // Find suggested relevant email IDs
+        const relevantEmails = emails.filter(e => {
+          const s = (e.subject || '').toLowerCase();
+          const q = question.toLowerCase();
+          return q.includes('client') ? e.classification === 'client_reply' :
+                 q.includes('assistant') ? e.classification === 'assistant_reply' :
+                 q.includes('meeting') ? e.extractedMeeting?.detected : false;
+        }).slice(0, 3);
+
+        return {
+          answer: answerText,
+          suggestedEmails: relevantEmails.map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
+        };
+      }
+    } catch (err) {
+      console.warn('⚠️ [AI Copilot] Gemini Q&A call failed, using heuristic synthesis:', err.message);
+    }
+  }
+
+  // Fallback to local heuristic query processing
   const q = (question || '').toLowerCase();
   const total = emails.length;
   const clientPending = emails.filter(e => e.classification === 'client_reply' && !e.clientAttention?.handled);
@@ -349,7 +519,6 @@ function answerCopilotQuestion(question, emails) {
     };
   }
 
-  // General summary
   return {
     answer: `Inbox Overview:\n• Total active threads: ${total}\n• Assistant to reply: ${assistantPending.length}\n• Client to reply: ${clientPending.length}\n• Meetings identified: ${meetings.length}\n• No response needed: ${emails.filter(e => e.classification === 'no_reply_needed').length}\n\nAsk me anytime to draft replies, filter conversations, or brief Alex!`,
     suggestedEmails: []
