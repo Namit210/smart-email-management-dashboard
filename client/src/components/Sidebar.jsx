@@ -8,11 +8,10 @@ import {
   Clock, 
   Calendar, 
   Star, 
-  Archive,
-  Plus,
-  Circle,
-  Sparkles,
-  ChevronRight
+  Archive, 
+  Plus, 
+  X,
+  Sparkles
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -21,7 +20,9 @@ export default function Sidebar({
   stats,
   accounts,
   onOpenConnectModal,
-  onOpenSimulate
+  onOpenSimulate,
+  isMobileOpen,
+  onCloseMobile
 }) {
   const navItems = [
     { id: 'all', label: 'All Inboxes', icon: Inbox, count: stats?.totalEmails },
@@ -35,12 +36,32 @@ export default function Sidebar({
     { id: 'archived', label: 'Archived', icon: Archive, count: null }
   ];
 
-  return (
-    <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-4 p-1">
+  const sidebarContent = (
+    <div className="flex flex-col gap-4 p-3 sm:p-1 h-full overflow-y-auto">
+      {/* Mobile Drawer Top Bar with Brand and Close Button */}
+      <div className="flex items-center justify-between pb-2 border-b border-[#eaedf1] lg:hidden">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#0b57d0] to-[#1e8e3e] flex items-center justify-center text-white">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <span className="font-bold text-[#1f1f1f] text-base font-poppins">OmniMail AI</span>
+        </div>
+        <button
+          onClick={onCloseMobile}
+          className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775]"
+          title="Close drawer"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Google-Style Compose / Simulate Button */}
       <button
-        onClick={onOpenSimulate}
-        className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#c2e7ff] hover:bg-[#b3e0ff] text-[#001d35] font-poppins font-medium text-sm shadow-sm hover:shadow transition-all w-fit mb-1"
+        onClick={() => {
+          onOpenSimulate();
+          if (onCloseMobile) onCloseMobile();
+        }}
+        className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#c2e7ff] hover:bg-[#b3e0ff] text-[#001d35] font-poppins font-medium text-sm shadow-xs hover:shadow transition-all w-fit mb-1"
       >
         <Plus className="w-5 h-5 text-[#001d35]" />
         <span>Simulate Email</span>
@@ -55,7 +76,10 @@ export default function Sidebar({
           return (
             <button
               key={item.id}
-              onClick={() => onSelectSegment(item.id)}
+              onClick={() => {
+                onSelectSegment(item.id);
+                if (onCloseMobile) onCloseMobile();
+              }}
               className={`flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-poppins transition-all text-left ${
                 isActive
                   ? 'bg-[#d3e3fd] text-[#041e49] font-semibold shadow-xs'
@@ -85,13 +109,16 @@ export default function Sidebar({
       <div className="border-t border-[#eaedf1] my-1"></div>
 
       {/* Connected Accounts */}
-      <div className="px-3">
+      <div className="px-2">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#747775] font-poppins">
             Connected Inboxes
           </span>
           <button
-            onClick={onOpenConnectModal}
+            onClick={() => {
+              onOpenConnectModal();
+              if (onCloseMobile) onCloseMobile();
+            }}
             className="p-1 rounded-full hover:bg-[#eaedf1] text-[#444746] transition"
             title="Connect Account"
           >
@@ -122,7 +149,10 @@ export default function Sidebar({
           ))}
 
           <button
-            onClick={onOpenConnectModal}
+            onClick={() => {
+              onOpenConnectModal();
+              if (onCloseMobile) onCloseMobile();
+            }}
             className="w-full py-2 px-3 border border-dashed border-[#c2e7ff] hover:bg-[#f0f4f9] rounded-xl text-center text-xs text-[#0b57d0] font-medium font-poppins transition flex items-center justify-center gap-1.5 mt-1"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -130,6 +160,32 @@ export default function Sidebar({
           </button>
         </div>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Left Sidebar (lg and up) */}
+      <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Slide-Over Drawer with Dimmed Backdrop (below lg) */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden animate-fade-in">
+          {/* Dimmed Backdrop */}
+          <div 
+            onClick={onCloseMobile}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
+            aria-hidden="true"
+          />
+
+          {/* Drawer Sheet */}
+          <div className="relative w-72 max-w-[85vw] h-full bg-[#f6f8fc] border-r border-[#eaedf1] shadow-2xl flex flex-col z-10">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

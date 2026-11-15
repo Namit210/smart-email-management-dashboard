@@ -5,6 +5,7 @@ import EmailList from './components/EmailList';
 import EmailDetail from './components/EmailDetail';
 import ClientPortal from './components/ClientPortal';
 import ClientSidebar from './components/ClientSidebar';
+import MobileBottomNav from './components/MobileBottomNav';
 import AICopilotDrawer from './components/AICopilotDrawer';
 import SimulateEmailModal from './components/SimulateEmailModal';
 import OnboardingModal from './components/OnboardingModal';
@@ -35,13 +36,15 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Modals
-  const [copilotOpen, setCopilotOpen] = useState(false);
-  const [simulateOpen, setSimulateOpen] = useState(false);
-  const [onboardingOpen, setOnboardingOpen] = useState(false);
-  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  // Set default right sidebar open on wide screens
+  useEffect(() => {
+    if (window.innerWidth >= 1280) {
+      setRightSidebarOpen(true);
+    }
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -242,10 +245,11 @@ export default function App() {
         toggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
         rightSidebarOpen={rightSidebarOpen}
         clientPendingCount={clientPendingCount}
+        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-3 flex flex-col">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-2 sm:py-3 flex flex-col">
         {currentView === 'client' ? (
           /* Client-Facing View (Executive Zen Mode) */
           <ClientPortal
@@ -257,17 +261,19 @@ export default function App() {
           /* Assistant Dashboard (Gmail Layout: Left Nav + Central List/Detail + Right Client Queue) */
           <div className="flex-1 flex flex-col lg:flex-row gap-3 items-stretch min-h-[calc(100vh-80px)]">
             
-            {/* Left Sidebar Navigation */}
+            {/* Left Sidebar Navigation (Desktop Persistent + Mobile Slide-Over Drawer) */}
             <Sidebar
               activeSegment={activeSegment}
               onSelectSegment={(seg) => {
                 setActiveSegment(seg);
-                setSelectedEmailId(null); // Return to list view when segment clicked
+                setSelectedEmailId(null);
               }}
               stats={stats}
               accounts={accounts}
               onOpenConnectModal={() => setConnectModalOpen(true)}
               onOpenSimulate={() => setSimulateOpen(true)}
+              isMobileOpen={mobileMenuOpen}
+              onCloseMobile={() => setMobileMenuOpen(false)}
             />
 
             {/* Central Main View: Gmail Pattern (List OR Opened Email Details) */}
@@ -313,6 +319,22 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Gmail-Style Mobile Bottom Navigation Bar (Visible on mobile/tablet) */}
+      <MobileBottomNav
+        activeSegment={activeSegment}
+        onSelectSegment={(seg) => {
+          setActiveSegment(seg);
+          setSelectedEmailId(null);
+        }}
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        onOpenCopilot={() => setCopilotOpen(true)}
+        onOpenSimulate={() => setSimulateOpen(true)}
+        toggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
+        clientPendingCount={clientPendingCount}
+        assistantCount={stats?.assistantReplyCount || 0}
+      />
 
       {/* AI Copilot Slide-over Drawer */}
       <AICopilotDrawer

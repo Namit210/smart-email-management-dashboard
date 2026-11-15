@@ -1,14 +1,10 @@
 import React from 'react';
 import { 
   UserCheck, 
-  Clock, 
   AlertTriangle, 
   CheckCircle2, 
   ArrowRight, 
-  MessageSquare, 
-  ExternalLink, 
   X,
-  Sparkles,
   ChevronRight
 } from 'lucide-react';
 
@@ -24,8 +20,8 @@ export default function ClientSidebar({
 
   const pendingEmails = clientEmails.filter(e => !e.clientAttention?.handled);
 
-  return (
-    <aside className="w-full xl:w-80 2xl:w-96 flex-shrink-0 bg-white border-l border-[#eaedf1] flex flex-col h-[calc(100vh-65px)] sticky top-[65px] shadow-sm">
+  const panelContent = (
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
       <div className="p-4 border-b border-[#eaedf1] flex items-center justify-between bg-[#f8fafd]">
         <div className="flex items-center gap-3">
@@ -50,8 +46,8 @@ export default function ClientSidebar({
 
         <button
           onClick={onClose}
-          className="p-1 rounded-full hover:bg-[#eaedf1] text-[#747775] hover:text-[#1f1f1f] transition"
-          title="Collapse Client Queue"
+          className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775] hover:text-[#1f1f1f] transition"
+          title="Close Client Queue"
         >
           <X className="w-4 h-4" />
         </button>
@@ -77,14 +73,14 @@ export default function ClientSidebar({
         {pendingEmails.length === 0 ? (
           <div className="p-8 text-center text-xs text-[#747775] flex flex-col items-center justify-center gap-2">
             <CheckCircle2 className="w-8 h-8 text-[#1e8e3e]" />
-            <p className="font-medium text-[#1f1f1f]">No Pending Client Emails</p>
+            <p className="font-medium text-[#1f1f1f] font-poppins">No Pending Client Emails</p>
             <p className="text-[11px] text-[#747775]">Alex is all caught up! No items currently require personal response.</p>
           </div>
         ) : (
           pendingEmails.map((email) => (
             <div
               key={email._id}
-              className="p-3.5 rounded-2xl bg-white border border-[#eaedf1] hover:border-[#c2e7ff] hover:shadow-sm transition-all flex flex-col gap-2 group"
+              className="p-3.5 rounded-2xl bg-white border border-[#eaedf1] hover:border-[#c2e7ff] hover:shadow-xs transition-all flex flex-col gap-2 group"
             >
               {/* Sender & Timestamp */}
               <div className="flex items-center justify-between gap-1 text-xs">
@@ -105,7 +101,7 @@ export default function ClientSidebar({
               </button>
 
               {/* Why client response needed */}
-              <div className="p-2 rounded-xl bg-[#fff8f2] border border-[#ffe7d6] text-[11px] text-[#b06000] flex items-start gap-1.5 leading-tight">
+              <div className="p-2.5 rounded-xl bg-[#fff8f2] border border-[#ffe7d6] text-[11px] text-[#b06000] flex items-start gap-1.5 leading-tight">
                 <AlertTriangle className="w-3.5 h-3.5 text-[#b06000] flex-shrink-0 mt-0.5" />
                 <span className="line-clamp-2 font-lato">
                   {email.clientAttention?.reason || email.classificationReason || 'Requires client personal sign-off.'}
@@ -116,9 +112,9 @@ export default function ClientSidebar({
               <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#f0f4f9] text-xs">
                 <button
                   onClick={() => onSelectEmail(email._id)}
-                  className="text-[#0b57d0] hover:underline font-semibold text-[11px] flex items-center gap-1"
+                  className="text-[#0b57d0] hover:underline font-semibold text-[11px] flex items-center gap-1 font-poppins"
                 >
-                  <span>Open Thread</span>
+                  <span>Open</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
 
@@ -126,7 +122,7 @@ export default function ClientSidebar({
                   <button
                     onClick={() => onClientAction(email._id, { action: 'mark_handled' })}
                     title="Mark as Handled"
-                    className="p-1 px-2 rounded-lg bg-[#f0f4f9] hover:bg-[#c4eed0] text-[#1f1f1f] text-[11px] font-medium transition"
+                    className="p-1 px-2.5 rounded-full bg-[#f0f4f9] hover:bg-[#c4eed0] text-[#1f1f1f] text-[11px] font-medium transition"
                   >
                     ✓ Handled
                   </button>
@@ -136,7 +132,7 @@ export default function ClientSidebar({
                       note: 'Assistant please handle response'
                     })}
                     title="Delegate to Assistant"
-                    className="p-1 px-2 rounded-lg bg-[#d3e3fd] hover:bg-[#c2e7ff] text-[#041e49] text-[11px] font-medium transition"
+                    className="p-1 px-2.5 rounded-full bg-[#d3e3fd] hover:bg-[#c2e7ff] text-[#041e49] text-[11px] font-medium transition"
                   >
                     Take Over
                   </button>
@@ -146,6 +142,27 @@ export default function ClientSidebar({
           ))
         )}
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Sticky Right Panel (xl and up) */}
+      <aside className="hidden xl:flex w-80 2xl:w-96 flex-shrink-0 border-l border-[#eaedf1] flex-col h-[calc(100vh-65px)] sticky top-[65px] shadow-xs">
+        {panelContent}
+      </aside>
+
+      {/* Mobile / Tablet Slide-Over Drawer with Backdrop (below xl) */}
+      <div className="fixed inset-0 z-50 flex justify-end xl:hidden animate-fade-in">
+        <div 
+          onClick={onClose}
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
+          aria-hidden="true"
+        />
+        <div className="relative w-80 sm:w-96 max-w-[90vw] h-full shadow-2xl flex flex-col z-10">
+          {panelContent}
+        </div>
+      </div>
+    </>
   );
 }
