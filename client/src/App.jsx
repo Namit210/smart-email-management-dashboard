@@ -39,6 +39,12 @@ export default function App() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Modals state
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [simulateOpen, setSimulateOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+
   // Set default right sidebar open on wide screens
   useEffect(() => {
     if (window.innerWidth >= 1280) {
