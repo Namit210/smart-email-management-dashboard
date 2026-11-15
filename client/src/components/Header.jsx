@@ -4,12 +4,14 @@ import {
   RefreshCw, 
   User, 
   ShieldCheck, 
-  PlusCircle, 
+  Plus, 
   RotateCcw, 
   HelpCircle,
-  Mail,
+  Search,
   ChevronDown,
-  CheckCircle2
+  Menu,
+  SlidersHorizontal,
+  X
 } from 'lucide-react';
 
 export default function Header({
@@ -24,62 +26,91 @@ export default function Header({
   onOpenCopilot,
   onOpenOnboarding,
   onResetData,
-  onOpenConnectModal
+  onOpenConnectModal,
+  searchQuery,
+  setSearchQuery,
+  toggleRightSidebar,
+  rightSidebarOpen,
+  clientPendingCount
 }) {
   return (
-    <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 lg:px-6 py-3">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        {/* Brand & Perspective Switcher */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-teal-400 p-[2px] shadow-lg shadow-indigo-500/20">
-              <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-teal-400" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-white text-base tracking-tight">OmniMail AI</h1>
-                <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                  Assistant Platform
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 hidden sm:block">Intelligent Inbox Triage & Delegation</p>
-            </div>
+    <header className="sticky top-0 z-30 bg-[#f6f8fc] border-b border-[#eaedf1] px-4 lg:px-6 py-2.5">
+      <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-4">
+        
+        {/* Left: Brand & Logo */}
+        <div className="flex items-center gap-3 min-w-[220px]">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#0b57d0] to-[#1e8e3e] flex items-center justify-center text-white shadow-sm shadow-[#0b57d0]/20 flex-shrink-0">
+            <Sparkles className="w-5 h-5" />
           </div>
-
-          {/* Perspective Switcher */}
-          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shadow-inner">
-            <button
-              onClick={() => setCurrentView('assistant')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                currentView === 'assistant'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Assistant Dashboard</span>
-            </button>
-            <button
-              onClick={() => setCurrentView('client')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                currentView === 'client'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Client Portal</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-[#1f1f1f] text-base tracking-tight font-poppins">
+                OmniMail
+              </span>
+              <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-[#d3e3fd] text-[#041e49]">
+                AI Assistant
+              </span>
+            </div>
+            <p className="text-xs text-[#747775] font-lato hidden sm:block">Executive Email Management</p>
           </div>
         </div>
 
-        {/* Right side controls */}
-        <div className="flex items-center flex-wrap gap-2 text-xs">
+        {/* Center: Google-Style Search Bar */}
+        <div className="flex-1 max-w-2xl mx-auto">
+          <div className="relative flex items-center w-full">
+            <Search className="w-5 h-5 text-[#444746] absolute left-4 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search in emails, senders, or AI classifications..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#eaf1fb] hover:bg-[#dfe9f8] focus:bg-white text-[#1f1f1f] placeholder-[#5e5e5e] text-sm font-poppins rounded-full pl-12 pr-10 py-2.5 transition border border-transparent focus:border-[#c2e7ff] focus:shadow-md focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 p-1 rounded-full hover:bg-slate-200 text-[#444746]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Controls & Perspective Switcher */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          
+          {/* Perspective Switcher (Assistant vs Client) */}
+          <div className="flex items-center bg-[#eaedf1] p-1 rounded-full">
+            <button
+              onClick={() => setCurrentView('assistant')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold font-poppins transition ${
+                currentView === 'assistant'
+                  ? 'bg-white text-[#0b57d0] shadow-sm'
+                  : 'text-[#444746] hover:text-[#1f1f1f]'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span className="hidden md:inline">Assistant</span>
+            </button>
+            <button
+              onClick={() => setCurrentView('client')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold font-poppins transition ${
+                currentView === 'client'
+                  ? 'bg-[#1e8e3e] text-white shadow-sm'
+                  : 'text-[#444746] hover:text-[#1f1f1f]'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden md:inline">Client (Alex)</span>
+              {clientPendingCount > 0 && (
+                <span className={`w-2 h-2 rounded-full ${currentView === 'client' ? 'bg-white' : 'bg-[#b06000]'} animate-pulse`}></span>
+              )}
+            </button>
+          </div>
+
           {/* Account Selector */}
-          <div className="relative group">
+          <div className="relative hidden xl:block">
             <select
               value={selectedAccount}
               onChange={(e) => {
@@ -89,63 +120,71 @@ export default function Header({
                   setSelectedAccount(e.target.value);
                 }
               }}
-              className="bg-slate-800 text-slate-200 border border-slate-700/80 rounded-lg px-3 py-1.5 pr-8 text-xs font-medium focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none"
+              className="bg-white text-[#444746] border border-[#eaedf1] hover:bg-[#f0f4f9] rounded-full px-3 py-1.5 pr-8 text-xs font-medium cursor-pointer appearance-none focus:outline-none"
             >
-              <option value="all">All Inboxes (Connected)</option>
+              <option value="all">All Connected Inboxes</option>
               {accounts.map((acc) => (
                 <option key={acc._id} value={acc.email}>
                   {acc.provider === 'gmail' ? 'Google: ' : 'Outlook: '}
                   {acc.email}
                 </option>
               ))}
-              <option value="__add_new__">+ Connect New Account...</option>
+              <option value="__add_new__">+ Connect Account...</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#747775] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Sync status & trigger */}
+          {/* Sync Mailbox Button */}
           <button
             onClick={onSync}
             disabled={isSyncing}
-            title="Sync Mailbox with AI Re-analysis"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition disabled:opacity-50"
+            title="Sync Inboxes with AI"
+            className="p-2 rounded-full bg-white hover:bg-[#f0f4f9] text-[#444746] border border-[#eaedf1] transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-teal-400 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+            <RefreshCw className={`w-4 h-4 text-[#0b57d0] ${isSyncing ? 'animate-spin' : ''}`} />
           </button>
 
-          {/* Simulate incoming email */}
-          <button
-            onClick={onOpenSimulate}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/90 hover:bg-indigo-600 text-white font-medium shadow-sm transition"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Simulate Email</span>
-          </button>
-
-          {/* AI Copilot trigger */}
+          {/* AI Copilot Button */}
           <button
             onClick={onOpenCopilot}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-500/20 to-indigo-500/20 hover:from-teal-500/30 hover:to-indigo-500/30 text-teal-300 border border-teal-500/30 font-medium transition"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#d3e3fd] hover:bg-[#c2e7ff] text-[#041e49] text-xs font-semibold font-poppins transition shadow-sm"
           >
-            <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-            <span>Ask AI</span>
+            <Sparkles className="w-3.5 h-3.5 text-[#0b57d0]" />
+            <span className="hidden sm:inline">Ask AI</span>
           </button>
 
-          {/* Quick Guide Tour */}
+          {/* Toggle Client Sidebar */}
+          <button
+            onClick={toggleRightSidebar}
+            title={rightSidebarOpen ? 'Hide Client Queue' : 'Show Client Queue'}
+            className={`p-2 rounded-full border transition flex items-center justify-center relative ${
+              rightSidebarOpen
+                ? 'bg-[#ffe7d6] border-[#ffd8bf] text-[#b06000]'
+                : 'bg-white border-[#eaedf1] text-[#444746] hover:bg-[#f0f4f9]'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            {clientPendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#b06000] text-white text-[9px] font-bold flex items-center justify-center">
+                {clientPendingCount}
+              </span>
+            )}
+          </button>
+
+          {/* Guide Walkthrough */}
           <button
             onClick={onOpenOnboarding}
-            title="Prototype Guide & Overview"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition"
+            title="Overview & Guide"
+            className="p-2 rounded-full bg-white hover:bg-[#f0f4f9] text-[#747775] border border-[#eaedf1] transition hidden sm:flex"
           >
-            <HelpCircle className="w-4 h-4 text-slate-400" />
+            <HelpCircle className="w-4 h-4" />
           </button>
 
           {/* Reset Demo Data */}
           <button
             onClick={onResetData}
             title="Reset to Original Demo State"
-            className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-rose-900/30 hover:text-rose-400 text-slate-400 border border-slate-700/80 transition"
+            className="p-2 rounded-full bg-white hover:bg-rose-50 text-[#747775] hover:text-[#b3261e] border border-[#eaedf1] transition"
           >
             <RotateCcw className="w-4 h-4" />
           </button>

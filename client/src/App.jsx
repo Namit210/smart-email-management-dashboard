@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
-import KPICards from './components/KPICards';
 import Sidebar from './components/Sidebar';
 import EmailList from './components/EmailList';
 import EmailDetail from './components/EmailDetail';
 import ClientPortal from './components/ClientPortal';
+import ClientSidebar from './components/ClientSidebar';
 import AICopilotDrawer from './components/AICopilotDrawer';
 import SimulateEmailModal from './components/SimulateEmailModal';
 import OnboardingModal from './components/OnboardingModal';
@@ -35,6 +35,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
   // Modals
   const [copilotOpen, setCopilotOpen] = useState(false);
@@ -86,16 +87,6 @@ export default function App() {
           filtered = filtered.filter(e => e.urgency === 'urgent');
         }
         setEmails(filtered);
-
-        // Select first email if none selected or if previous selected email is not in filtered list
-        if (filtered.length > 0) {
-          const exists = filtered.find(e => e._id === selectedEmailId);
-          if (!exists) {
-            setSelectedEmailId(filtered[0]._id);
-          }
-        } else {
-          setSelectedEmailId(null);
-        }
       }
     } catch (err) {
       console.error('Failed to fetch emails:', err);
@@ -120,6 +111,10 @@ export default function App() {
   const clientEmails = useMemo(() => {
     return emails.filter(e => e.classification === 'client_reply' || e.clientAttention?.required);
   }, [emails]);
+
+  const clientPendingCount = useMemo(() => {
+    return clientEmails.filter(e => !e.clientAttention?.handled).length;
+  }, [clientEmails]);
 
   // Handlers
   const handleSync = async () => {
@@ -216,6 +211,7 @@ export default function App() {
       setIsLoading(true);
       try {
         await resetInboxData();
+        setSelectedEmailId(null);
         await loadAllData();
       } catch (err) {
         console.error('Reset failed:', err);
@@ -226,8 +222,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Top Navigation Bar */}
+    <div className="min-h-screen bg-[#f6f8fc] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
+      {/* Top Google-style Navigation Bar */}
       <Header
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -241,67 +237,80 @@ export default function App() {
         onOpenOnboarding={() => setOnboardingOpen(true)}
         onResetData={handleResetData}
         onOpenConnectModal={() => setConnectModalOpen(true)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        toggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
+        rightSidebarOpen={rightSidebarOpen}
+        clientPendingCount={clientPendingCount}
       />
 
-      {/* Main Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 flex flex-col">
+      {/* Main Container */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-3 flex flex-col">
         {currentView === 'client' ? (
-          /* Client-Facing View (Section 4 & Deliverable 5) */
+          /* Client-Facing View (Executive Zen Mode) */
           <ClientPortal
             clientEmails={clientEmails}
             onClientAction={handleClientAction}
             onSwitchToAssistant={() => setCurrentView('assistant')}
           />
         ) : (
-          /* Assistant Dashboard (Section 2, 3, 5, 6, 7 & Deliverable 2) */
-          <>
-            {/* KPI Metrics Summary Bar */}
-            <KPICards
-              stats={stats}
+          /* Assistant Dashboard (Gmail Layout: Left Nav + Central List/Detail + Right Client Queue) */
+          <div className="flex-1 flex flex-col lg:flex-row gap-3 items-stretch min-h-[calc(100vh-80px)]">
+            
+            {/* Left Sidebar Navigation */}
+            <Sidebar
               activeSegment={activeSegment}
-              onSelectSegment={setActiveSegment}
+              onSelectSegment={(seg) => {
+                setActiveSegment(seg);
+                setSelectedEmailId(null); // Return to list view when segment clicked
+              }}
+              stats={stats}
+              accounts={accounts}
+              onOpenConnectModal={() => setConnectModalOpen(true)}
+              onOpenSimulate={() => setSimulateOpen(true)}
             />
 
-            {/* Split Layout: Sidebar + Master/Detail Panes */}
-            <div className="flex-1 flex flex-col lg:flex-row gap-5 items-stretch min-h-[620px]">
-              {/* Left Sidebar Navigation */}
-              <Sidebar
-                activeSegment={activeSegment}
-                onSelectSegment={setActiveSegment}
-                stats={stats}
-                accounts={accounts}
-                onOpenConnectModal={() => setConnectModalOpen(true)}
-              />
-
-              {/* Center Email List Pane */}
-              <div className={`w-full ${selectedEmailId ? 'lg:w-[380px] xl:w-[420px]' : 'lg:flex-1'} flex flex-col`}>
-                <EmailList
-                  emails={emails}
-                  selectedEmailId={selectedEmailId}
-                  onSelectEmail={setSelectedEmailId}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  activeFilter={activeFilter}
-                  setActiveFilter={setActiveFilter}
-                  onToggleFlag={handleToggleFlag}
-                  onQuickOverride={handleUpdateClassification}
-                  isLoading={isLoading}
-                />
-              </div>
-
-              {/* Right Email Detail Pane */}
-              <div className={`w-full lg:flex-1 ${!selectedEmailId ? 'hidden lg:flex' : 'flex'} flex-col`}>
+            {/* Central Main View: Gmail Pattern (List OR Opened Email Details) */}
+            <div className="flex-1 flex flex-col min-w-0">
+              {selectedEmailId && selectedEmail ? (
+                /* Full Conversation View (opened on click, with Back button) */
                 <EmailDetail
                   email={selectedEmail}
-                  onClose={() => setSelectedEmailId(null)}
+                  onBack={() => setSelectedEmailId(null)}
                   onUpdateClassification={handleUpdateClassification}
                   onSendReply={handleSendReply}
                   onToggleFlag={handleToggleFlag}
                   onClientAction={handleClientAction}
                 />
-              </div>
+              ) : (
+                /* Full-Width Gmail-Style Email List */
+                <EmailList
+                  emails={emails}
+                  onSelectEmail={(id) => setSelectedEmailId(id)}
+                  activeFilter={activeFilter}
+                  setActiveFilter={setActiveFilter}
+                  onToggleFlag={handleToggleFlag}
+                  onQuickOverride={handleUpdateClassification}
+                  isLoading={isLoading}
+                  activeSegment={activeSegment}
+                  onSelectSegment={setActiveSegment}
+                />
+              )}
             </div>
-          </>
+
+            {/* Right Sidebar: Client's Pending Emails (Alex Morgan) */}
+            <ClientSidebar
+              isOpen={rightSidebarOpen}
+              onClose={() => setRightSidebarOpen(false)}
+              clientEmails={clientEmails}
+              onSelectEmail={(id) => {
+                setSelectedEmailId(id);
+                setCurrentView('assistant');
+              }}
+              onClientAction={handleClientAction}
+              onOpenClientPortal={() => setCurrentView('client')}
+            />
+          </div>
         )}
       </main>
 

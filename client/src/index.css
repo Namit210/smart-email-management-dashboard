@@ -4,8 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100 antialiased font-sans min-h-screen;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-[#f6f8fc] text-[#1f1f1f] antialiased font-sans min-h-screen text-sm;
+    font-family: 'Poppins', 'Lato', sans-serif;
   }
 
   /* Modern Web Guidance: Native dialog modal scroll containment */
@@ -15,15 +15,15 @@
   dialog::backdrop {
     overflow: hidden;
     overscroll-behavior: contain;
-    background-color: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(4px);
+    background-color: rgba(31, 31, 31, 0.45);
+    backdrop-filter: blur(2px);
   }
 }
 
-/* Custom scrollbars */
+/* Google-style subtle scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -31,28 +31,32 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: #dadce0;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: #bdc1c6;
 }
 
-/* Glassmorphism helpers */
-.glass-panel {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Material You Elevation / Shadows */
+.m3-surface {
+  background: #ffffff;
+  border-radius: 1rem;
 }
 
-.glass-card {
-  background: rgba(30, 41, 59, 0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+.m3-card {
+  background: #ffffff;
+  border: 1px solid #eaedf1;
+  border-radius: 1rem;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.glass-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  background: rgba(30, 41, 59, 0.75);
+.m3-card:hover {
+  box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+}
+
+.email-row-hover:hover {
+  box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+  z-index: 10;
 }

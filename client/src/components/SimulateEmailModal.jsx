@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  PlusCircle, 
   Sparkles, 
   X, 
   Send, 
-  FileText, 
   Bot, 
   UserCheck, 
   CheckCheck 
@@ -19,28 +17,28 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate }) {
 
   const presets = [
     {
-      label: '⚡ Urgent Contract Sign-off (Client)',
+      label: '⚡ Urgent Contract Sign-off (Client to Reply)',
       subject: 'Final Signature Required: $85,000 Strategic Partnership Agreement',
       senderName: 'Rachel Green',
       senderEmail: 'rachel@summitpartners.com',
       body: 'Hi Alex, our board has officially approved the partnership terms. We need your personal signature and DocuSign authorization by 5:00 PM today so we can finalize the agreement.'
     },
     {
-      label: '📅 Meeting Scheduling (Assistant)',
+      label: '📅 Meeting Scheduling (Assistant to Reply)',
       subject: 'Coffee catchup & partnership sync next Tuesday at 3pm',
       senderName: 'Michael Chang',
       senderEmail: 'mchang@hypergrowth.vc',
       body: 'Hi Alex, really enjoyed our quick conversation at the conference. Can your assistant coordinate a 30-minute coffee meeting next Tuesday at 3:00 PM EST? Let me know what location works best.'
     },
     {
-      label: '🧾 Vendor Invoice (Assistant)',
+      label: '🧾 Vendor Invoice (Assistant to Reply)',
       subject: 'Invoice #8839 due for Design Sprint Deliverables',
       senderName: 'PixelStudio Billing',
       senderEmail: 'billing@pixelstudio.design',
       body: 'Hi Alex, attached is invoice #8839 for the brand sprint completed last week. Total due: $2,800. Please forward to your assistant for processing before the net-15 due date.'
     },
     {
-      label: '📰 Newsletter Update (No Reply)',
+      label: '📰 Newsletter Update (No Reply Needed)',
       subject: 'SaaS Weekly Digest: Scaling Executive AI Agents',
       senderName: 'SaaS Briefings',
       senderEmail: 'newsletter@saasbriefings.com',
@@ -73,29 +71,29 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
-              <Sparkles className="w-4 h-4 text-teal-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-3 border-b border-[#eaedf1]">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#c2e7ff] text-[#001d35]">
+              <Sparkles className="w-5 h-5 text-[#0b57d0]" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Simulate Incoming Email</h2>
-              <p className="text-xs text-slate-400">Test live AI classification & reply responsibility routing</p>
+              <h2 className="text-base font-bold text-[#1f1f1f] font-poppins">Simulate Incoming Email</h2>
+              <p className="text-xs text-[#747775] font-lato">Test live AI reply responsibility triage & routing</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+            className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775]"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 1-Click Preset Scenarios */}
         <div>
-          <span className="text-[11px] font-semibold uppercase text-slate-400 tracking-wider block mb-2">
+          <span className="text-xs font-semibold uppercase text-[#747775] tracking-wider block mb-2 font-poppins">
             1-Click Test Scenarios:
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -104,10 +102,10 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate }) {
                 key={idx}
                 type="button"
                 onClick={() => handleApplyPreset(preset)}
-                className="text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-xs text-slate-300 transition"
+                className="text-left p-3 rounded-2xl bg-[#f8fafd] hover:bg-[#eaf1fb] border border-[#eaedf1] hover:border-[#c2e7ff] text-xs text-[#444746] transition group"
               >
-                <div className="font-semibold text-white">{preset.label}</div>
-                <div className="text-[10px] text-slate-400 truncate mt-0.5">{preset.subject}</div>
+                <div className="font-semibold text-[#1f1f1f] font-poppins group-hover:text-[#0b57d0]">{preset.label}</div>
+                <div className="text-[11px] text-[#747775] font-lato truncate mt-0.5">{preset.subject}</div>
               </button>
             ))}
           </div>
@@ -117,66 +115,66 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate }) {
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 mt-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Sender Name</label>
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Sender Name</label>
               <input
                 type="text"
                 placeholder="e.g. Victoria Vance"
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Sender Email</label>
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Sender Email</label>
               <input
                 type="email"
                 placeholder="e.g. victoria@acme.com"
                 value={senderEmail}
                 onChange={(e) => setSenderEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Subject</label>
+            <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Subject</label>
             <input
               type="text"
               placeholder="e.g. Urgent approval required for Q4 budget"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Email Body Content</label>
+            <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Email Body Content</label>
             <textarea
               rows={4}
-              placeholder="Paste or write email text here..."
+              placeholder="Paste or write email message here..."
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 leading-relaxed"
+              className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl p-3 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] leading-relaxed font-poppins"
               required
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs text-slate-300 font-medium transition"
+              className="px-4 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !subject.trim() || !body.trim()}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-semibold text-white shadow-sm transition flex items-center gap-1.5"
+              className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center gap-1.5"
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Analyzing...' : 'Simulate & Run AI Triage'}</span>
+              <Send className="w-4 h-4" />
+              <span>{isSubmitting ? 'Analyzing with AI...' : 'Simulate & Run AI Triage'}</span>
             </button>
           </div>
         </form>

@@ -6,7 +6,6 @@ import {
   Mail, 
   Lock, 
   RefreshCw,
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 
@@ -15,7 +14,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
   const [email, setEmail] = useState('');
   const [clientName, setClientName] = useState('Alex Morgan');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState(1); // 1: Select provider & enter email, 2: OAuth permission grant simulation
+  const [step, setStep] = useState(1);
 
   if (!isOpen) return null;
 
@@ -40,16 +39,16 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
-              <Mail className="w-4 h-4" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#eaedf1]">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#c2e7ff] text-[#001d35]">
+              <Mail className="w-5 h-5 text-[#0b57d0]" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Connect Email Account</h2>
-              <p className="text-xs text-slate-400">Step {step} of 2 • Secure OAuth Integration</p>
+              <h2 className="text-base font-bold text-[#1f1f1f] font-poppins">Connect Email Account</h2>
+              <p className="text-xs text-[#747775] font-lato">Step {step} of 2 • Secure OAuth Flow</p>
             </div>
           </div>
           <button
@@ -57,70 +56,70 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
               setStep(1);
               onClose();
             }}
-            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+            className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775]"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {step === 1 ? (
           <form onSubmit={handleNext} className="flex flex-col gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-2 font-poppins">
                 Select Email Provider:
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setProvider('gmail')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition ${
+                  className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition ${
                     provider === 'gmail'
-                      ? 'border-indigo-500 bg-indigo-500/10 text-white'
-                      : 'border-slate-800 hover:border-slate-700 text-slate-300 bg-slate-950/40'
+                      ? 'border-[#0b57d0] bg-[#eaf1fb] text-[#041e49]'
+                      : 'border-[#eaedf1] hover:border-[#dadce0] text-[#444746] bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs">Google Gmail</span>
-                    {provider === 'gmail' && <Check className="w-3.5 h-3.5 text-indigo-400" />}
+                    <span className="font-bold text-sm font-poppins">Google Gmail</span>
+                    {provider === 'gmail' && <Check className="w-4 h-4 text-[#0b57d0]" />}
                   </div>
-                  <span className="text-[10px] text-slate-400">Personal & Workspace</span>
+                  <span className="text-xs text-[#747775] font-lato">Personal & Workspace</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setProvider('outlook')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition ${
+                  className={`p-3.5 rounded-2xl border text-left flex flex-col gap-1 transition ${
                     provider === 'outlook'
-                      ? 'border-teal-500 bg-teal-500/10 text-white'
-                      : 'border-slate-800 hover:border-slate-700 text-slate-300 bg-slate-950/40'
+                      ? 'border-[#0b57d0] bg-[#eaf1fb] text-[#041e49]'
+                      : 'border-[#eaedf1] hover:border-[#dadce0] text-[#444746] bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs">Microsoft Outlook</span>
-                    {provider === 'outlook' && <Check className="w-3.5 h-3.5 text-teal-400" />}
+                    <span className="font-bold text-sm font-poppins">Microsoft</span>
+                    {provider === 'outlook' && <Check className="w-4 h-4 text-[#0b57d0]" />}
                   </div>
-                  <span className="text-[10px] text-slate-400">Office 365 & Exchange</span>
+                  <span className="text-xs text-[#747775] font-lato">Outlook & Office 365</span>
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">
                 Account Email Address
               </label>
               <input
                 type="email"
-                placeholder="e.g. alex.morgan@clientfirm.com"
+                placeholder="e.g. alex.morgan@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
                 required
                 autoFocus
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">
                 Client / Executive Name
               </label>
               <input
@@ -128,73 +127,72 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
                 placeholder="Alex Morgan"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs text-slate-300 font-medium transition"
+                className="px-4 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!email.trim()}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-semibold text-white shadow-sm transition flex items-center gap-1.5"
+                className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center gap-1.5"
               >
-                <span>Continue to Authorization</span>
+                <span>Continue</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </form>
         ) : (
-          /* Step 2: OAuth Consent Simulation */
           <div className="flex flex-col gap-4">
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+            <div className="p-3.5 rounded-2xl bg-[#f0f4f9] flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#c2e7ff] text-[#001d35] flex items-center justify-center font-bold text-sm font-poppins">
                 {provider === 'gmail' ? 'G' : 'M'}
               </div>
               <div className="truncate">
-                <span className="font-bold text-xs text-white block truncate">{email}</span>
-                <span className="text-[10px] text-slate-400">
-                  {provider === 'gmail' ? 'Google Cloud OAuth 2.0' : 'Microsoft Identity Platform'}
+                <span className="font-bold text-sm text-[#1f1f1f] block truncate font-poppins">{email}</span>
+                <span className="text-xs text-[#747775] font-lato">
+                  {provider === 'gmail' ? 'Google Cloud OAuth 2.0' : 'Microsoft Graph Identity'}
                 </span>
               </div>
             </div>
 
-            <div className="text-xs text-slate-300 flex flex-col gap-2">
-              <span className="font-semibold text-slate-200">
+            <div className="text-xs text-[#444746] flex flex-col gap-2 font-lato">
+              <span className="font-semibold text-[#1f1f1f] font-poppins text-xs">
                 OmniMail AI requests permission to:
               </span>
-              <ul className="space-y-2 text-slate-400 text-xs">
+              <ul className="space-y-2 text-[#444746] text-xs">
                 <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
-                  <span>Read email messages and conversation threads for AI triage.</span>
+                  <Check className="w-4 h-4 text-[#1e8e3e] flex-shrink-0 mt-0.5" />
+                  <span>Read email conversations to analyze reply responsibility.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
-                  <span>Prepare AI draft responses on behalf of the executive office.</span>
+                  <Check className="w-4 h-4 text-[#1e8e3e] flex-shrink-0 mt-0.5" />
+                  <span>Prepare AI draft responses on behalf of the assistant.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0 mt-0.5" />
-                  <span>Manage inbox labels and archive status upon user action.</span>
+                  <Check className="w-4 h-4 text-[#1e8e3e] flex-shrink-0 mt-0.5" />
+                  <span>Manage inbox labels and archive status upon action.</span>
                 </li>
               </ul>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2 text-[11px] text-slate-400">
-              <Lock className="w-3.5 h-3.5 text-indigo-400" />
-              <span>256-bit encrypted token storage. Revocable anytime.</span>
+            <div className="p-3 rounded-xl bg-[#f8fafd] border border-[#eaedf1] flex items-center gap-2 text-xs text-[#747775] font-lato">
+              <Lock className="w-3.5 h-3.5 text-[#0b57d0]" />
+              <span>256-bit encrypted credentials. Revocable anytime.</span>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-3 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs text-slate-300 font-medium transition"
+                className="px-4 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746]"
               >
                 Back
               </button>
@@ -202,7 +200,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
                 type="button"
                 onClick={handleAuthorize}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-xs font-semibold text-white shadow-sm transition flex items-center gap-1.5"
+                className="px-5 py-2 rounded-full bg-[#1e8e3e] hover:bg-[#167030] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm flex items-center gap-1.5"
               >
                 {isSubmitting ? (
                   <>
@@ -211,7 +209,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <ShieldCheck className="w-4 h-4" />
                     <span>Grant Access & Connect</span>
                   </>
                 )}

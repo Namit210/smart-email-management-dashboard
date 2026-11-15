@@ -6,9 +6,7 @@ import {
   User, 
   X, 
   ArrowRight, 
-  HelpCircle,
-  Lightbulb,
-  MessageSquare
+  Lightbulb
 } from 'lucide-react';
 import { askCopilot } from '../services/api';
 
@@ -58,7 +56,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
           ...prev,
           {
             sender: 'ai',
-            text: "I encountered an issue querying the inbox intelligence model. Please try again.",
+            text: "I encountered an issue querying the inbox model. Please try again.",
             suggestedEmails: []
           }
         ]);
@@ -78,64 +76,64 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-      <div className="w-full sm:w-[480px] h-full bg-slate-900 border-l border-slate-800 flex flex-col shadow-2xl">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+      <div className="w-full sm:w-[460px] h-full bg-white border-l border-[#eaedf1] flex flex-col shadow-2xl">
         {/* Drawer Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
+        <div className="p-4 border-b border-[#eaedf1] flex items-center justify-between bg-[#f8fafd]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-indigo-600 flex items-center justify-center shadow-sm">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#0b57d0] to-[#1e8e3e] flex items-center justify-center text-white shadow-xs">
+              <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <h2 className="text-sm font-bold text-[#1f1f1f] font-poppins flex items-center gap-1.5">
                 <span>AI Inbox Copilot</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 font-medium">Active</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c4eed0] text-[#0f5223] font-semibold">Active</span>
               </h2>
-              <p className="text-[11px] text-slate-400">Ask anything across all connected mailboxes</p>
+              <p className="text-xs text-[#747775] font-lato">Ask anything across all connected mailboxes</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+            className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775] hover:text-[#1f1f1f] transition"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Message Log */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-[#f8fafd]">
           {messages.map((msg, idx) => (
             <div
               key={idx}
               className={`flex flex-col gap-1.5 ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
             >
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-[#747775] font-poppins">
                 {msg.sender === 'ai' ? (
                   <>
-                    <Bot className="w-3.5 h-3.5 text-teal-400" />
+                    <Bot className="w-3.5 h-3.5 text-[#0b57d0]" />
                     <span>Inbox Copilot</span>
                   </>
                 ) : (
                   <>
-                    <User className="w-3.5 h-3.5 text-indigo-400" />
+                    <User className="w-3.5 h-3.5 text-[#1e8e3e]" />
                     <span>Assistant</span>
                   </>
                 )}
               </div>
 
               <div
-                className={`p-3.5 rounded-2xl text-xs leading-relaxed max-w-[90%] whitespace-pre-line ${
+                className={`p-3.5 rounded-2xl text-sm leading-relaxed max-w-[90%] whitespace-pre-line font-poppins ${
                   msg.sender === 'user'
-                    ? 'bg-indigo-600 text-white rounded-br-none'
-                    : 'bg-slate-800/80 text-slate-200 border border-slate-700/80 rounded-bl-none'
+                    ? 'bg-[#0b57d0] text-white rounded-br-none shadow-xs'
+                    : 'bg-white text-[#1f1f1f] border border-[#eaedf1] rounded-bl-none shadow-xs'
                 }`}
               >
                 {msg.text}
 
                 {/* Clickable suggested email cards */}
                 {msg.suggestedEmails && msg.suggestedEmails.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-700/80 flex flex-col gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase text-teal-400 tracking-wider">
+                  <div className="mt-3 pt-2.5 border-t border-[#eaedf1] flex flex-col gap-1.5">
+                    <span className="text-[11px] font-semibold uppercase text-[#0b57d0] tracking-wider font-poppins">
                       Relevant Conversations:
                     </span>
                     {msg.suggestedEmails.map((item) => (
@@ -145,13 +143,13 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
                           onSelectEmail(item.id);
                           onClose();
                         }}
-                        className="text-left p-2 rounded-lg bg-slate-900/80 hover:bg-slate-950 border border-slate-700 hover:border-indigo-500 text-xs text-slate-200 transition flex items-center justify-between group"
+                        className="text-left p-2.5 rounded-xl bg-[#f8fafd] hover:bg-[#eaf1fb] border border-[#eaedf1] text-xs text-[#1f1f1f] transition flex items-center justify-between group"
                       >
                         <div className="truncate pr-2">
-                          <span className="font-medium text-white truncate block">{item.subject}</span>
-                          <span className="text-[10px] text-slate-400">{item.sender}</span>
+                          <span className="font-semibold text-[#1f1f1f] truncate block font-poppins">{item.subject}</span>
+                          <span className="text-[11px] text-[#747775] font-lato">{item.sender}</span>
                         </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 flex-shrink-0" />
+                        <ArrowRight className="w-4 h-4 text-[#747775] group-hover:text-[#0b57d0] flex-shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -161,17 +159,17 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
           ))}
 
           {isLoading && (
-            <div className="flex items-center gap-2 p-3 rounded-2xl bg-slate-800/60 text-slate-400 text-xs w-fit">
-              <Sparkles className="w-4 h-4 text-teal-400 animate-spin" />
-              <span>Analyzing inboxes and synthesizing answer...</span>
+            <div className="flex items-center gap-2 p-3 rounded-2xl bg-white border border-[#eaedf1] text-[#747775] text-xs w-fit shadow-xs font-poppins">
+              <Sparkles className="w-4 h-4 text-[#0b57d0] animate-spin" />
+              <span>Analyzing mailbox data and composing briefing...</span>
             </div>
           )}
         </div>
 
-        {/* Quick Suggested Queries */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold mb-2">
-            <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+        {/* Suggested Queries */}
+        <div className="p-3 border-t border-[#eaedf1] bg-white">
+          <div className="flex items-center gap-1.5 text-xs text-[#747775] font-semibold mb-2 font-poppins">
+            <Lightbulb className="w-3.5 h-3.5 text-[#e37400]" />
             <span>Suggested Inquiries:</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -179,7 +177,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
               <button
                 key={i}
                 onClick={() => handleSend(q)}
-                className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition text-left"
+                className="text-xs px-3 py-1.5 rounded-full bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] transition text-left font-poppins font-medium"
               >
                 {q}
               </button>
@@ -188,7 +186,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
         </div>
 
         {/* Input Bar */}
-        <div className="p-3 border-t border-slate-800 bg-slate-900">
+        <div className="p-3 border-t border-[#eaedf1] bg-white">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -198,15 +196,15 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
           >
             <input
               type="text"
-              placeholder="Ask anything about Alex's inbox..."
+              placeholder="Ask anything about Alex's inboxes..."
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="flex-1 bg-[#f0f4f9] border border-[#eaedf1] rounded-full px-4 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
             />
             <button
               type="submit"
               disabled={isLoading || !inputQuery.trim()}
-              className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white transition flex-shrink-0"
+              className="p-2.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-white transition flex-shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>
