@@ -12,13 +12,22 @@ export default function ClientSidebar({
   isOpen,
   onClose,
   clientEmails,
+  clientList = [],
+  selectedClient = 'all',
+  onSelectClient,
   onSelectEmail,
   onClientAction,
   onOpenClientPortal
 }) {
   if (!isOpen) return null;
 
-  const pendingEmails = clientEmails.filter(e => !e.clientAttention?.handled);
+  // Filter pending emails based on selectedClient
+  const allPending = clientEmails.filter(e => !e.clientAttention?.handled);
+  const pendingEmails = selectedClient === 'all'
+    ? allPending
+    : allPending.filter(e => e.clientName === selectedClient);
+
+  const activeClientObj = clientList.find(c => c.name === selectedClient);
 
   const panelContent = (
     <div className="flex flex-col h-full bg-white">
@@ -27,20 +36,24 @@ export default function ClientSidebar({
         <div className="flex items-center gap-3">
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80"
-              alt="Alex Morgan"
+              src={activeClientObj?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80"}
+              alt={selectedClient === 'all' ? 'All Clients' : selectedClient}
               className="w-10 h-10 rounded-full object-cover border border-[#eaedf1]"
             />
             <span className="w-2.5 h-2.5 rounded-full bg-[#1e8e3e] border-2 border-white absolute bottom-0 right-0"></span>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-sm text-[#1f1f1f] font-poppins">Alex Morgan</h3>
+              <h3 className="font-semibold text-sm text-[#1f1f1f] font-poppins">
+                {selectedClient === 'all' ? 'Client Queue (All)' : selectedClient}
+              </h3>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#ffe7d6] text-[#b06000]">
-                Client
+                {pendingEmails.length} Pending
               </span>
             </div>
-            <p className="text-xs text-[#747775]">CEO • {pendingEmails.length} pending decisions</p>
+            <p className="text-xs text-[#747775] truncate max-w-[180px]">
+              {selectedClient === 'all' ? 'Managing 3 Principals' : (activeClientObj?.role || 'Executive Principal')}
+            </p>
           </div>
         </div>
 
@@ -53,17 +66,55 @@ export default function ClientSidebar({
         </button>
       </div>
 
+      {/* Client Quick Filter Pills */}
+      {clientList.length > 0 && onSelectClient && (
+        <div className="px-3 py-2 bg-white border-b border-[#eaedf1] flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => onSelectClient('all')}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium font-poppins whitespace-nowrap transition ${
+              selectedClient === 'all'
+                ? 'bg-[#0b57d0] text-white shadow-2xs'
+                : 'bg-[#f0f4f9] text-[#444746] hover:bg-[#eaf1fb]'
+            }`}
+          >
+            All ({allPending.length})
+          </button>
+          {clientList.map((c) => {
+            const count = allPending.filter(e => e.clientName === c.name).length;
+            const isSel = selectedClient === c.name;
+            return (
+              <button
+                key={c.name}
+                onClick={() => onSelectClient(c.name)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium font-poppins whitespace-nowrap transition flex items-center gap-1 ${
+                  isSel
+                    ? 'bg-[#b06000] text-white shadow-2xs font-semibold'
+                    : 'bg-[#f0f4f9] text-[#444746] hover:bg-[#eaf1fb]'
+                }`}
+              >
+                <span>{c.name.split(' ')[0]}</span>
+                {count > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSel ? 'bg-white text-[#b06000]' : 'bg-[#ffe7d6] text-[#b06000]'} font-bold`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Subheader / Mode switcher */}
-      <div className="px-4 py-2.5 bg-[#f0f4f9] border-b border-[#eaedf1] flex items-center justify-between text-xs">
+      <div className="px-4 py-2 bg-[#f0f4f9] border-b border-[#eaedf1] flex items-center justify-between text-xs">
         <span className="font-medium text-[#444746] flex items-center gap-1.5 font-poppins">
           <UserCheck className="w-4 h-4 text-[#b06000]" />
-          <span>Client's Personal Queue</span>
+          <span>Requires Executive Action</span>
         </span>
         <button
           onClick={onOpenClientPortal}
           className="text-[#0b57d0] hover:underline font-semibold text-xs flex items-center gap-0.5"
         >
-          <span>Full Portal</span>
+          <span>Open Portal</span>
           <ArrowRight className="w-3 h-3" />
         </button>
       </div>
@@ -73,8 +124,8 @@ export default function ClientSidebar({
         {pendingEmails.length === 0 ? (
           <div className="p-8 text-center text-xs text-[#747775] flex flex-col items-center justify-center gap-2">
             <CheckCircle2 className="w-8 h-8 text-[#1e8e3e]" />
-            <p className="font-medium text-[#1f1f1f] font-poppins">No Pending Client Emails</p>
-            <p className="text-[11px] text-[#747775]">Alex is all caught up! No items currently require personal response.</p>
+            <p className="font-medium text-[#1f1f1f] font-poppins">All Caught Up!</p>
+            <p className="text-[11px] text-[#747775]">No items currently require personal response in this queue.</p>
           </div>
         ) : (
           pendingEmails.map((email) => (
@@ -82,11 +133,18 @@ export default function ClientSidebar({
               key={email._id}
               className="p-3.5 rounded-2xl bg-white border border-[#eaedf1] hover:border-[#c2e7ff] hover:shadow-xs transition-all flex flex-col gap-2 group"
             >
-              {/* Sender & Timestamp */}
+              {/* Client & Sender & Timestamp */}
               <div className="flex items-center justify-between gap-1 text-xs">
-                <span className="font-semibold text-[#1f1f1f] truncate font-poppins">
-                  {email.sender.name}
-                </span>
+                <div className="flex items-center gap-1.5 truncate">
+                  {email.clientName && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e8def8] text-[#381e72] font-semibold flex-shrink-0">
+                      {email.clientName.split(' ')[0]}
+                    </span>
+                  )}
+                  <span className="font-semibold text-[#1f1f1f] truncate font-poppins">
+                    {email.sender.name}
+                  </span>
+                </div>
                 <span className="text-[11px] text-[#747775] whitespace-nowrap">
                   {new Date(email.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>

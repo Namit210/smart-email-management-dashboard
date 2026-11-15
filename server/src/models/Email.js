@@ -38,6 +38,12 @@ const EmailSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  clientName: {
+    type: String,
+    required: true,
+    default: 'Alex Morgan',
+    index: true
+  },
   provider: {
     type: String,
     enum: ['gmail', 'outlook'],

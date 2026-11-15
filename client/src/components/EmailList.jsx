@@ -176,6 +176,11 @@ export default function EmailList({
                     <span className={`text-sm truncate font-poppins ${isUnread ? 'text-[#1f1f1f] font-semibold' : 'text-[#444746] font-medium'}`}>
                       {email.sender.name}
                     </span>
+                    {email.clientName && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#e8def8] text-[#381e72] font-semibold whitespace-nowrap">
+                        {email.clientName.split(' ')[0]}
+                      </span>
+                    )}
                   </div>
                   <span className={`text-[11px] font-poppins whitespace-nowrap ${isUnread ? 'text-[#1f1f1f] font-bold' : 'text-[#747775]'}`}>
                     {formatRelativeTime(email.receivedAt)}
@@ -215,6 +220,13 @@ export default function EmailList({
                     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                       {getBadge(email.classification, email.confidence, email.manualOverride)}
                     </div>
+
+                    {email.clientName && (
+                      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#e8def8] text-[#381e72] border border-[#d0bcff] whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#6750a4]"></span>
+                        <span>{email.clientName.split(' ')[0]}</span>
+                      </span>
+                    )}
 
                     {email.extractedMeeting?.detected && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#c4eed0] text-[#0f5223] whitespace-nowrap">

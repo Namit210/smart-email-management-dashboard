@@ -97,7 +97,8 @@ export const askCopilot = async (question) => {
   return res.json();
 };
 
-export const fetchStats = async () => {
-  const res = await fetch(`${API_BASE}/stats`);
+export const fetchStats = async (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const res = await fetch(`${API_BASE}/stats${query ? `?${query}` : ''}`);
   return res.json();
 };

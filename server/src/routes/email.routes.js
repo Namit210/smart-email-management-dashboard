@@ -14,12 +14,17 @@ router.get('/', async (req, res) => {
       classification,
       category,
       account,
+      client,
       search,
       status = 'active',
       clientView = 'false'
     } = req.query;
 
     const query = {};
+
+    if (client && client !== 'all') {
+      query.clientName = client;
+    }
 
     // Client view only shows emails that require client reply and are not archived
     if (clientView === 'true') {
@@ -318,12 +323,14 @@ router.post('/simulate', async (req, res) => {
       senderName = 'Jonathan Reed',
       senderEmail = 'jreed@globaladvisors.com',
       body = 'Hi Alex, we need your personal sign-off on the quarterly advisory retainer before tomorrow morning. Please let us know if you approve.',
+      clientName = 'Alex Morgan',
       accountEmail = 'alex.morgan@company.com',
       provider = 'gmail'
     } = req.body;
 
     const emailData = {
       accountEmail,
+      clientName,
       provider,
       subject,
       sender: {
@@ -332,7 +339,7 @@ router.post('/simulate', async (req, res) => {
         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(senderName)}`
       },
       recipient: {
-        name: 'Alex Morgan',
+        name: clientName,
         email: accountEmail
       },
       receivedAt: new Date(),
@@ -343,7 +350,7 @@ router.post('/simulate', async (req, res) => {
       messages: [
         {
           sender: { name: senderName, email: senderEmail },
-          recipient: { name: 'Alex Morgan', email: accountEmail },
+          recipient: { name: clientName, email: accountEmail },
           date: new Date(),
           subject,
           body,
@@ -380,24 +387,13 @@ router.post('/simulate', async (req, res) => {
 router.post('/reset', async (req, res) => {
   try {
     await Email.deleteMany({});
+    await Account.deleteMany({});
     await ActivityLog.deleteMany({});
     
-    // Reseed
-    for (const email of SAMPLE_EMAILS) {
-      const aiAnalysis = await analyzeEmail(email);
-      await Email.create({
-        ...email,
-        ...aiAnalysis
-      });
-    }
+    const { seedDatabase } = require('../services/seedData');
+    await seedDatabase();
 
-    await ActivityLog.create({
-      action: 'DATA_RESET',
-      actor: 'system',
-      details: 'Inbox restored to default demonstration state.'
-    });
-
-    res.json({ success: true, message: 'Inbox reset successfully to demonstration state' });
+    res.json({ success: true, message: 'Inbox reset successfully with multi-client demo state' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

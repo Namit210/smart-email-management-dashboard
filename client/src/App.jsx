@@ -28,6 +28,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState('assistant'); // 'assistant' | 'client'
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState('all');
+  const [selectedClient, setSelectedClient] = useState('all'); // 'all' | 'Alex Morgan' | 'Sarah Jenkins' | 'Marcus Vance'
+  const [clientPortalUser, setClientPortalUser] = useState('Alex Morgan');
   const [emails, setEmails] = useState([]);
   const [selectedEmailId, setSelectedEmailId] = useState(null);
   const [stats, setStats] = useState(null);
@@ -45,6 +47,27 @@ export default function App() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
 
+  // Extract unique clients
+  const clientList = useMemo(() => {
+    const map = new Map();
+    accounts.forEach(a => {
+      if (a.clientName && !map.has(a.clientName)) {
+        map.set(a.clientName, {
+          name: a.clientName,
+          role: a.role,
+          email: a.email,
+          avatar: a.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(a.clientName)}`
+        });
+      }
+    });
+    const list = Array.from(map.values());
+    return list.length > 0 ? list : [
+      { name: 'Alex Morgan', role: 'Founder & CEO, Apex Systems', email: 'alex.morgan@company.com' },
+      { name: 'Sarah Jenkins', role: 'Managing Partner, Horizon Ventures', email: 'sarah.jenkins@horizonvc.com' },
+      { name: 'Marcus Vance', role: 'Chairman & Angel Investor, Vance Holdings', email: 'marcus.vance@vanceholdings.com' }
+    ];
+  }, [accounts]);
+
   // Set default right sidebar open on wide screens
   useEffect(() => {
     if (window.innerWidth >= 1280) {
@@ -57,17 +80,17 @@ export default function App() {
     loadAllData();
   }, []);
 
-  // Reload emails when segment or account changes
+  // Reload emails when segment, client or account changes
   useEffect(() => {
     loadEmails();
-  }, [selectedAccount, activeSegment, activeFilter, searchQuery]);
+  }, [selectedAccount, selectedClient, activeSegment, activeFilter, searchQuery]);
 
   const loadAllData = async () => {
     setIsLoading(true);
     try {
       const [accRes, statsRes] = await Promise.all([
         fetchAccounts(),
-        fetchStats()
+        fetchStats(selectedClient !== 'all' ? { client: selectedClient } : {})
       ]);
       if (accRes.success) setAccounts(accRes.accounts);
       if (statsRes.success) setStats(statsRes.stats);
@@ -83,6 +106,7 @@ export default function App() {
     try {
       const params = {};
       if (selectedAccount !== 'all') params.account = selectedAccount;
+      if (selectedClient !== 'all') params.client = selectedClient;
       if (activeSegment !== 'all') params.segment = activeSegment;
       if (searchQuery.trim()) params.search = searchQuery.trim();
       if (activeFilter === 'unread') params.status = 'active';
@@ -104,7 +128,9 @@ export default function App() {
 
   const refreshStats = async () => {
     try {
-      const res = await fetchStats();
+      const params = {};
+      if (selectedClient !== 'all') params.client = selectedClient;
+      const res = await fetchStats(params);
       if (res.success) setStats(res.stats);
     } catch (err) {
       console.error('Failed to update stats:', err);
@@ -116,7 +142,7 @@ export default function App() {
     return emails.find(e => e._id === selectedEmailId) || null;
   }, [emails, selectedEmailId]);
 
-  // Client view emails: all emails requiring client reply (not archived)
+  // Client view emails: all emails requiring client reply
   const clientEmails = useMemo(() => {
     return emails.filter(e => e.classification === 'client_reply' || e.clientAttention?.required);
   }, [emails]);
@@ -239,6 +265,11 @@ export default function App() {
         accounts={accounts}
         selectedAccount={selectedAccount}
         setSelectedAccount={setSelectedAccount}
+        selectedClient={selectedClient}
+        setSelectedClient={setSelectedClient}
+        clientList={clientList}
+        clientPortalUser={clientPortalUser}
+        setClientPortalUser={setClientPortalUser}
         onSync={handleSync}
         isSyncing={isSyncing}
         onOpenSimulate={() => setSimulateOpen(true)}
@@ -259,7 +290,10 @@ export default function App() {
         {currentView === 'client' ? (
           /* Client-Facing View (Executive Zen Mode) */
           <ClientPortal
-            clientEmails={clientEmails}
+            clientEmails={emails.filter(e => (e.classification === 'client_reply' || e.clientAttention?.required) && (!clientPortalUser || e.clientName === clientPortalUser))}
+            clientList={clientList}
+            activeClient={clientPortalUser}
+            onSelectClient={setClientPortalUser}
             onClientAction={handleClientAction}
             onSwitchToAssistant={() => setCurrentView('assistant')}
           />
@@ -276,6 +310,9 @@ export default function App() {
               }}
               stats={stats}
               accounts={accounts}
+              clientList={clientList}
+              selectedClient={selectedClient}
+              onSelectClient={setSelectedClient}
               onOpenConnectModal={() => setConnectModalOpen(true)}
               onOpenSimulate={() => setSimulateOpen(true)}
               isMobileOpen={mobileMenuOpen}
@@ -298,6 +335,7 @@ export default function App() {
                 /* Full-Width Gmail-Style Email List */
                 <EmailList
                   emails={emails}
+                  selectedClient={selectedClient}
                   onSelectEmail={(id) => setSelectedEmailId(id)}
                   activeFilter={activeFilter}
                   setActiveFilter={setActiveFilter}
@@ -310,11 +348,14 @@ export default function App() {
               )}
             </div>
 
-            {/* Right Sidebar: Client's Pending Emails (Alex Morgan) */}
+            {/* Right Sidebar: Client's Pending Emails */}
             <ClientSidebar
               isOpen={rightSidebarOpen}
               onClose={() => setRightSidebarOpen(false)}
               clientEmails={clientEmails}
+              clientList={clientList}
+              selectedClient={selectedClient}
+              onSelectClient={setSelectedClient}
               onSelectEmail={(id) => {
                 setSelectedEmailId(id);
                 setCurrentView('assistant');
@@ -357,6 +398,7 @@ export default function App() {
         isOpen={simulateOpen}
         onClose={() => setSimulateOpen(false)}
         onSimulate={handleSimulate}
+        clientList={clientList}
       />
 
       {/* Onboarding & Guide Walkthrough Modal */}

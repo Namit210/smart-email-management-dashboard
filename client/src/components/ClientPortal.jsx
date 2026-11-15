@@ -18,6 +18,9 @@ import {
 
 export default function ClientPortal({
   clientEmails,
+  clientList = [],
+  activeClient = 'Alex Morgan',
+  onSelectClient,
   onClientAction,
   onSwitchToAssistant
 }) {
@@ -26,6 +29,11 @@ export default function ClientPortal({
   const [delegateNote, setDelegateNote] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
   const [toastMessage, setToastMessage] = useState(null);
+
+  const activeClientObj = clientList.find(c => c.name === activeClient) || {
+    name: activeClient,
+    role: 'Executive Principal'
+  };
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -59,19 +67,55 @@ export default function ClientPortal({
     setDelegateNote('');
   };
 
+  const firstName = activeClient.split(' ')[0];
+
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6">
+      {/* Client Perspective Switcher Bar (for Reviewers & Multi-Client Principals) */}
+      {clientList.length > 1 && (
+        <div className="bg-white border border-[#eaedf1] rounded-2xl p-2.5 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[#747775] font-poppins pl-1">
+              Active Executive View:
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {clientList.map((c) => {
+                const isSelected = activeClient === c.name;
+                return (
+                  <button
+                    key={c.name}
+                    onClick={() => onSelectClient && onSelectClient(c.name)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium font-poppins transition flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-[#1e8e3e] text-white shadow-2xs font-semibold'
+                        : 'bg-[#f0f4f9] hover:bg-[#eaedf1] text-[#444746]'
+                    }`}
+                  >
+                    <span>{c.name}</span>
+                    <span className="text-[10px] opacity-75 hidden sm:inline">({c.role.split(',')[0]})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <span className="text-[11px] text-[#747775] hidden md:inline font-lato">
+            Minimalist portal for executive principals
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#eaedf1]">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-[#1e8e3e] animate-pulse"></span>
             <span className="text-xs font-semibold tracking-wider uppercase text-[#1e8e3e] font-poppins">
-              Executive Focus Mode
+              Executive Focus Mode • {activeClientObj.role}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1f1f1f] tracking-tight font-poppins">
-            Good afternoon, Alex.
+            Good afternoon, {firstName}.
           </h1>
           <p className="text-sm text-[#444746] mt-1 font-lato">
             {pendingEmails.length === 0

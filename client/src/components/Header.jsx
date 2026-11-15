@@ -19,6 +19,11 @@ export default function Header({
   accounts,
   selectedAccount,
   setSelectedAccount,
+  selectedClient,
+  setSelectedClient,
+  clientList = [],
+  clientPortalUser,
+  setClientPortalUser,
   onSync,
   isSyncing,
   onOpenSimulate,
@@ -88,9 +93,29 @@ export default function Header({
           </div>
         </div>
 
-        {/* Right: Controls & Perspective Switcher */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Right: Controls, Multi-Client Switcher & Perspective Switcher */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
           
+          {/* Multi-Client Filter Dropdown (Assistant View) */}
+          {currentView === 'assistant' && (
+            <div className="hidden lg:flex items-center gap-1 bg-white border border-[#dadce0] rounded-full px-2.5 py-1 text-xs shadow-2xs hover:border-[#0b57d0] transition">
+              <User className="w-3.5 h-3.5 text-[#0b57d0]" />
+              <select
+                value={selectedClient}
+                onChange={(e) => setSelectedClient(e.target.value)}
+                className="bg-transparent font-semibold text-[#1f1f1f] focus:outline-none cursor-pointer font-poppins pr-1 text-xs"
+                title="Filter inbox by client"
+              >
+                <option value="all">👥 All Clients ({clientList.length})</option>
+                {clientList.map((c) => (
+                  <option key={c.name} value={c.name}>
+                    👤 {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Perspective Switcher (Assistant vs Client) */}
           <div className="flex items-center bg-[#eaedf1] p-0.5 sm:p-1 rounded-full">
             <button
@@ -100,7 +125,7 @@ export default function Header({
                   ? 'bg-white text-[#0b57d0] shadow-xs'
                   : 'text-[#444746] hover:text-[#1f1f1f]'
               }`}
-              title="Assistant Workspace"
+              title="Assistant Workspace (Multi-Client Unified Management)"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Assistant</span>
@@ -112,10 +137,12 @@ export default function Header({
                   ? 'bg-[#1e8e3e] text-white shadow-xs'
                   : 'text-[#444746] hover:text-[#1f1f1f]'
               }`}
-              title="Client Portal (Alex Morgan)"
+              title="Executive Client View"
             >
               <User className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Client</span>
+              <span className="hidden md:inline">
+                {currentView === 'client' ? (clientPortalUser ? clientPortalUser.split(' ')[0] : 'Client') : 'Client'}
+              </span>
               {clientPendingCount > 0 && (
                 <span className={`w-1.5 h-1.5 rounded-full ${currentView === 'client' ? 'bg-white' : 'bg-[#b06000]'} animate-pulse`}></span>
               )}

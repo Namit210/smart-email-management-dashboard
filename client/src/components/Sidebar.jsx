@@ -19,6 +19,9 @@ export default function Sidebar({
   onSelectSegment,
   stats,
   accounts,
+  clientList = [],
+  selectedClient = 'all',
+  onSelectClient,
   onOpenConnectModal,
   onOpenSimulate,
   isMobileOpen,
@@ -127,26 +130,45 @@ export default function Sidebar({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          {accounts.map((acc) => (
-            <div
-              key={acc._id}
-              className="px-3 py-2 rounded-xl bg-white border border-[#eaedf1] flex items-center justify-between text-xs hover:bg-[#f0f4f9] transition"
-            >
-              <div className="flex items-center gap-2 truncate">
-                <div className="w-5 h-5 rounded-full bg-[#eaf1fb] text-[#0b57d0] font-bold flex items-center justify-center text-[10px] flex-shrink-0">
-                  {acc.provider === 'gmail' ? 'G' : 'O'}
+          {accounts.map((acc) => {
+            const isSelected = selectedClient === acc.clientName;
+            return (
+              <div
+                key={acc._id}
+                onClick={() => {
+                  if (onSelectClient) {
+                    onSelectClient(isSelected ? 'all' : (acc.clientName || 'all'));
+                    if (onCloseMobile) onCloseMobile();
+                  }
+                }}
+                className={`px-3 py-2 rounded-xl border flex items-center justify-between text-xs cursor-pointer transition ${
+                  isSelected
+                    ? 'bg-[#d3e3fd] border-[#b8d4fb] text-[#041e49]'
+                    : 'bg-white border-[#eaedf1] hover:bg-[#f0f4f9] text-[#1f1f1f]'
+                }`}
+                title={`Filter inbox by ${acc.clientName}`}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <div className="w-5 h-5 rounded-full bg-[#eaf1fb] text-[#0b57d0] font-bold flex items-center justify-center text-[10px] flex-shrink-0">
+                    {acc.provider === 'gmail' ? 'G' : 'O'}
+                  </div>
+                  <div className="truncate text-left">
+                    <span className="font-semibold text-xs truncate block font-poppins">
+                      {acc.clientName || acc.email}
+                    </span>
+                    <span className="text-[10px] text-[#747775] truncate block">
+                      {acc.role || acc.email}
+                    </span>
+                  </div>
                 </div>
-                <div className="truncate text-left">
-                  <span className="font-medium text-[#1f1f1f] text-xs truncate block font-poppins">
-                    {acc.email}
+                {acc.totalEmails > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#eaedf1] text-[#444746] font-medium flex-shrink-0">
+                    {acc.totalEmails}
                   </span>
-                  <span className="text-[11px] text-[#747775] capitalize">
-                    {acc.provider} • Connected
-                  </span>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <button
             onClick={() => {
