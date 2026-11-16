@@ -38,7 +38,8 @@ async function callGeminiApi(prompt, jsonMode = false) {
           'Content-Type': 'application/json',
           'X-goog-api-key': apiKey
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000)
       });
 
       const data = await res.json();
@@ -373,23 +374,25 @@ function analyzeEmailHeuristics(emailData) {
 function generateDrafts(email, classification, hasMeeting) {
   const senderName = email.sender?.name?.split(' ')[0] || 'there';
   const subject = email.subject || '';
+  const clientName = email.clientName || 'Alex Morgan';
+  const clientFirst = clientName.split(' ')[0];
 
   if (hasMeeting) {
     return [
       {
         tone: 'scheduling',
         subject: `Re: ${subject}`,
-        body: `Hi ${senderName},\n\nThank you for reaching out. I manage Alex's calendar and would be delighted to coordinate a time for you both to connect.\n\nAlex is available for a 30-minute call next Tuesday at 2:00 PM EST or Wednesday at 10:30 AM EST. Please let me know which time works best for you and I'll send over the calendar invite.\n\nBest regards,\nAntigravity Executive Assistant`
+        body: `Hi ${senderName},\n\nThank you for reaching out. I manage ${clientFirst}'s calendar and would be delighted to coordinate a time for you both to connect.\n\n${clientFirst} is available for a 30-minute call next Tuesday at 2:00 PM EST or Wednesday at 10:30 AM EST. Please let me know which time works best for you and I'll send over the calendar invite.\n\nBest regards,\nExecutive Assistant to ${clientName}`
       },
       {
         tone: 'professional',
         subject: `Re: ${subject}`,
-        body: `Dear ${senderName},\n\nThank you for your note regarding ${subject}. We have checked Alex's schedule and can confirm availability for the proposed discussion. Looking forward to connecting.\n\nWarm regards,\nAlex Morgan's Office`
+        body: `Dear ${senderName},\n\nThank you for your note regarding ${subject}. We have checked ${clientFirst}'s schedule and can confirm availability for the proposed discussion. Looking forward to connecting.\n\nWarm regards,\n${clientName}'s Office`
       },
       {
         tone: 'concise',
         subject: `Re: ${subject}`,
-        body: `Hi ${senderName},\n\nTuesday at 2:00 PM EST works well on our end. Sending a calendar invite shortly.\n\nThanks,\nAssistant to Alex Morgan`
+        body: `Hi ${senderName},\n\nTuesday at 2:00 PM EST works well on our end. Sending a calendar invite shortly.\n\nThanks,\nAssistant to ${clientName}`
       }
     ];
   }
@@ -399,17 +402,17 @@ function generateDrafts(email, classification, hasMeeting) {
       {
         tone: 'professional',
         subject: `Re: ${subject}`,
-        body: `Hi ${senderName},\n\nThank you for sharing this. I have reviewed the details thoroughly. Everything looks aligned with our strategic goals, and I am pleased to approve moving forward.\n\nMy assistant is looped in here to help coordinate the next administrative steps.\n\nBest,\nAlex Morgan`
+        body: `Hi ${senderName},\n\nThank you for sharing this. I have reviewed the details thoroughly. Everything looks aligned with our strategic goals, and I am pleased to approve moving forward.\n\nMy assistant is looped in here to help coordinate the next administrative steps.\n\nBest,\n${clientName}`
       },
       {
         tone: 'concise',
         subject: `Re: ${subject}`,
-        body: `Hi ${senderName},\n\nLooks great to me—approved. Please proceed with the proposed timeline.\n\nThanks,\nAlex`
+        body: `Hi ${senderName},\n\nLooks great to me—approved. Please proceed with the proposed timeline.\n\nThanks,\n${clientFirst}`
       },
       {
         tone: 'friendly',
         subject: `Re: ${subject}`,
-        body: `Hi ${senderName},\n\nReally appreciate you bringing this to my attention! The proposal looks fantastic. Let's move ahead with this plan.\n\nWarm regards,\nAlex`
+        body: `Hi ${senderName},\n\nReally appreciate you bringing this to my attention! The proposal looks fantastic. Let's move ahead with this plan.\n\nWarm regards,\n${clientFirst}`
       }
     ];
   }
@@ -418,7 +421,7 @@ function generateDrafts(email, classification, hasMeeting) {
     {
       tone: 'professional',
       subject: `Re: ${subject}`,
-      body: `Hi ${senderName},\n\nThank you for reaching out. We have received your message regarding "${subject}" and are currently processing the details. We will follow up with you shortly.\n\nBest regards,\nExecutive Office`
+      body: `Hi ${senderName},\n\nThank you for reaching out. We have received your message regarding "${subject}" and are currently processing the details. We will follow up with you shortly.\n\nBest regards,\nOffice of ${clientName}`
     },
     {
       tone: 'concise',
@@ -428,7 +431,7 @@ function generateDrafts(email, classification, hasMeeting) {
     {
       tone: 'friendly',
       subject: `Re: ${subject}`,
-      body: `Hi ${senderName},\n\nHope you're having a wonderful week! Thanks for sending this over. We'll take care of this right away and keep you updated.\n\nWarm regards,\nAssistant to Alex`
+      body: `Hi ${senderName},\n\nHope you're having a wonderful week! Thanks for sending this over. We'll take care of this right away and keep you updated.\n\nWarm regards,\nAssistant to ${clientFirst}`
     }
   ];
 }
@@ -441,7 +444,8 @@ async function answerCopilotQuestion(question, emails) {
   if (process.env.GEMINI_API_KEY) {
     try {
       const emailContext = emails.slice(0, 15).map((e, idx) => `
-[${idx + 1}] Subject: "${e.subject}"
+[${idx + 1}] Client: ${e.clientName || 'General'}
+Subject: "${e.subject}"
 From: ${e.sender.name} (${e.sender.email})
 Classification: ${e.classification}
 Summary: ${e.aiSummary || e.snippet}
@@ -451,8 +455,9 @@ Status: ${e.status}
 `).join('\n');
 
       const prompt = `
-You are an executive inbox copilot for a personal assistant managing emails for client Alex Morgan.
-Answer the assistant's question accurately using only the email context below:
+You are an executive inbox copilot for a personal assistant managing communications across multiple executive clients (e.g. Alex Morgan - CEO, Sarah Jenkins - Managing Partner, Marcus Vance - Chairman).
+Each email thread specifies the recipient client.
+Answer the assistant's question accurately, providing client-specific context when asked or summarizing across all clients:
 
 CURRENT ACTIVE EMAILS:
 ${emailContext}
@@ -469,9 +474,13 @@ Provide a concise, direct, professional answer summarizing the status, highlight
         const relevantEmails = emails.filter(e => {
           const s = (e.subject || '').toLowerCase();
           const q = question.toLowerCase();
-          return q.includes('client') ? e.classification === 'client_reply' :
-                 q.includes('assistant') ? e.classification === 'assistant_reply' :
-                 q.includes('meeting') ? e.extractedMeeting?.detected : false;
+          const client = (e.clientName || '').toLowerCase();
+          return (q.includes('sarah') && client.includes('sarah')) ||
+                 (q.includes('marcus') && client.includes('marcus')) ||
+                 (q.includes('alex') && client.includes('alex')) ||
+                 (q.includes('client') ? e.classification === 'client_reply' :
+                  q.includes('assistant') ? e.classification === 'assistant_reply' :
+                  q.includes('meeting') ? e.extractedMeeting?.detected : false);
         }).slice(0, 3);
 
         return {
@@ -492,24 +501,45 @@ Provide a concise, direct, professional answer summarizing the status, highlight
   const meetings = emails.filter(e => e.extractedMeeting?.detected);
   const urgent = emails.filter(e => e.urgency === 'urgent');
 
-  if (q.includes('client') || q.includes('alex') || q.includes('need client')) {
-    if (clientPending.length === 0) {
+  // Specific client query
+  const specificClient = q.includes('sarah') ? 'Sarah Jenkins' :
+                         q.includes('marcus') ? 'Marcus Vance' :
+                         q.includes('alex') ? 'Alex Morgan' : null;
+
+  if (specificClient) {
+    const forClient = emails.filter(e => e.clientName === specificClient);
+    const clientNeeds = forClient.filter(e => e.classification === 'client_reply' && !e.clientAttention?.handled);
+    if (clientNeeds.length === 0) {
       return {
-        answer: "Great news! Currently there are no emails requiring Alex's personal attention. All pending matters have been handled or delegated to you.",
+        answer: `Great news! Currently there are no emails requiring ${specificClient}'s personal attention. All matters have been handled or delegated to you.`,
         suggestedEmails: []
       };
     }
-    const itemsList = clientPending.map(e => `• "${e.subject}" from ${e.sender.name} (${e.clientAttention?.reason || e.classificationReason})`).join('\n');
+    const itemsList = clientNeeds.map(e => `• "${e.subject}" from ${e.sender.name} (${e.clientAttention?.reason || e.classificationReason})`).join('\n');
     return {
-      answer: `There are currently ${clientPending.length} emails requiring Alex's personal attention:\n\n${itemsList}\n\nWould you like me to prepare briefing summaries or draft responses for any of these?`,
+      answer: `There are currently ${clientNeeds.length} emails requiring ${specificClient}'s personal attention:\n\n${itemsList}`,
+      suggestedEmails: clientNeeds.map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
+    };
+  }
+
+  if (q.includes('client') || q.includes('need client') || q.includes('executive')) {
+    if (clientPending.length === 0) {
+      return {
+        answer: "Great news! Currently there are no emails requiring personal attention across any of your clients. All pending matters have been handled or delegated to you.",
+        suggestedEmails: []
+      };
+    }
+    const itemsList = clientPending.map(e => `• [${e.clientName || 'Client'}] "${e.subject}" from ${e.sender.name} (${e.clientAttention?.reason || e.classificationReason})`).join('\n');
+    return {
+      answer: `There are currently ${clientPending.length} emails requiring personal attention across your clients:\n\n${itemsList}\n\nWould you like me to prepare briefing summaries or draft responses for any of these?`,
       suggestedEmails: clientPending.map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
     };
   }
 
   if (q.includes('my attention') || q.includes('assistant') || q.includes('assigned to me')) {
-    const itemsList = assistantPending.slice(0, 5).map(e => `• "${e.subject}" from ${e.sender.name} (${e.classificationReason})`).join('\n');
+    const itemsList = assistantPending.slice(0, 5).map(e => `• [${e.clientName || 'Client'}] "${e.subject}" from ${e.sender.name} (${e.classificationReason})`).join('\n');
     return {
-      answer: `You have ${assistantPending.length} emails assigned to you as the assistant. Here are the top priorities:\n\n${itemsList}`,
+      answer: `You have ${assistantPending.length} emails assigned to you across all client inboxes. Here are the top priorities:\n\n${itemsList}`,
       suggestedEmails: assistantPending.slice(0, 5).map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
     };
   }
@@ -517,13 +547,13 @@ Provide a concise, direct, professional answer summarizing the status, highlight
   if (q.includes('meeting') || q.includes('schedule') || q.includes('calendar') || q.includes('appointment')) {
     if (meetings.length === 0) {
       return {
-        answer: "No upcoming meeting requests found in the current inbox.",
+        answer: "No upcoming meeting requests found across any connected client inboxes.",
         suggestedEmails: []
       };
     }
-    const meetingList = meetings.map(e => `• ${e.extractedMeeting.title} - ${e.extractedMeeting.date} at ${e.extractedMeeting.time} (${e.extractedMeeting.location})`).join('\n');
+    const meetingList = meetings.map(e => `• [${e.clientName || 'Client'}] ${e.extractedMeeting.title} - ${e.extractedMeeting.date} at ${e.extractedMeeting.time} (${e.extractedMeeting.location})`).join('\n');
     return {
-      answer: `Found ${meetings.length} meeting proposals in your emails:\n\n${meetingList}\n\nYou can click 'Send Availability' to reply with Alex's open calendar slots.`,
+      answer: `Found ${meetings.length} meeting proposals across your clients' inboxes:\n\n${meetingList}\n\nYou can click 'Send Availability' on any thread to reply with open calendar slots.`,
       suggestedEmails: meetings.map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
     };
   }
@@ -531,20 +561,20 @@ Provide a concise, direct, professional answer summarizing the status, highlight
   if (q.includes('waiting') || q.includes('pending response') || q.includes('follow-up')) {
     const waiting = emails.filter(e => e.category === 'Waiting for Response' || e.urgency === 'urgent');
     return {
-      answer: `You are currently tracking ${waiting.length || 2} conversations waiting for external response or follow-up. Keep an eye on upcoming contract counters and pending invoice approvals.`,
+      answer: `You are currently tracking ${waiting.length || 2} conversations waiting for external response or follow-up across your clients' inboxes.`,
       suggestedEmails: waiting.slice(0, 3).map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
     };
   }
 
   if (q.includes('urgent') || q.includes('high priority')) {
     return {
-      answer: `Found ${urgent.length} urgent emails requiring immediate review today:\n\n${urgent.map(e => `• [${e.classification.toUpperCase()}] ${e.subject} - ${e.sender.name}`).join('\n')}`,
+      answer: `Found ${urgent.length} urgent emails requiring immediate review across your clients:\n\n${urgent.map(e => `• [${e.clientName || 'Client'}] [${e.classification.toUpperCase()}] ${e.subject} - ${e.sender.name}`).join('\n')}`,
       suggestedEmails: urgent.map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
     };
   }
 
   return {
-    answer: `Inbox Overview:\n• Total active threads: ${total}\n• Assistant to reply: ${assistantPending.length}\n• Client to reply: ${clientPending.length}\n• Meetings identified: ${meetings.length}\n• No response needed: ${emails.filter(e => e.classification === 'no_reply_needed').length}\n\nAsk me anytime to draft replies, filter conversations, or brief Alex!`,
+    answer: `Multi-Client Inbox Overview:\n• Total active threads: ${total}\n• Assistant to reply: ${assistantPending.length}\n• Client to reply: ${clientPending.length}\n• Meetings identified: ${meetings.length}\n• No response needed: ${emails.filter(e => e.classification === 'no_reply_needed').length}\n\nAsk me anytime about Alex Morgan, Sarah Jenkins, or Marcus Vance!`,
     suggestedEmails: []
   };
 }

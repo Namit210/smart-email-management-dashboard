@@ -185,7 +185,7 @@ export default function ClientPortal({
               <CheckCircle2 className="w-10 h-10 text-[#1e8e3e]" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-[#1f1f1f] font-poppins">All Clear, Alex!</h3>
+              <h3 className="text-lg font-bold text-[#1f1f1f] font-poppins">All Clear, {firstName}!</h3>
               <p className="text-sm text-[#747775] mt-1 font-lato max-w-sm">
                 Your assistant is handling all operational and scheduling threads. Enjoy your uninterrupted focus time.
               </p>

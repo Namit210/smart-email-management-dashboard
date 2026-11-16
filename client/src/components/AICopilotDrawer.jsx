@@ -14,7 +14,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: "Hello! I am your AI Executive Inbox Copilot. I analyze all connected Gmail and Outlook inboxes in real-time, determine reply responsibilities, extract meetings, and keep Alex Morgan focused on high-leverage decisions.\n\nHow can I help you manage the inbox right now?",
+      text: "Hello! I am your AI Executive Inbox Copilot. I analyze connected inboxes across all your clients (Alex Morgan, Sarah Jenkins, Marcus Vance) in real-time, determine reply responsibilities, extract meetings, and keep your principals focused on high-leverage decisions.\n\nHow can I help you manage the inboxes right now?",
       suggestedEmails: []
     }
   ]);
@@ -22,11 +22,11 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
   const [isLoading, setIsLoading] = useState(false);
 
   const sampleQuestions = [
-    "Show me emails that need Alex's attention",
+    "Show me emails requiring client attention",
+    "What does Sarah Jenkins need to approve?",
+    "What does Marcus Vance need to sign?",
     "What emails are assigned to me as assistant?",
-    "What meetings are coming up?",
-    "What am I waiting for a response on?",
-    "Show me urgent emails requiring action today"
+    "What meetings are coming up across all clients?"
   ];
 
   if (!isOpen) return null;
@@ -196,7 +196,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
           >
             <input
               type="text"
-              placeholder="Ask anything about Alex's inboxes..."
+              placeholder="Ask anything about your clients' inboxes..."
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               className="flex-1 bg-[#f0f4f9] border border-[#eaedf1] rounded-full px-4 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"

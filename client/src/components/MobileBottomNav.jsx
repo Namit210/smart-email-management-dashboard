@@ -114,7 +114,7 @@ export default function MobileBottomNav({
           <div className={`p-1 rounded-full ${currentView === 'client' ? 'bg-[#c4eed0]' : ''}`}>
             <User className="w-5 h-5" />
           </div>
-          <span className="text-[10px] font-medium font-poppins mt-0.5">Alex Portal</span>
+          <span className="text-[10px] font-medium font-poppins mt-0.5">Client Portal</span>
         </button>
       </nav>
     </>

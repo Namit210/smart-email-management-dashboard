@@ -27,7 +27,7 @@ export default function KPICards({ stats, activeSegment, onSelectSegment }) {
       id: 'client_reply',
       title: 'Client to Reply',
       count: stats.clientPendingCount || stats.clientReplyCount || 0,
-      label: 'Requires Alex Morgan',
+      label: 'Executive Attention Needed',
       icon: UserCheck,
       color: 'from-amber-500/20 to-rose-500/20 border-amber-500/30 text-amber-400',
       tagColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',

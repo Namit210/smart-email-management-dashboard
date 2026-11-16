@@ -193,7 +193,7 @@ router.post('/:id/client-action', async (req, res) => {
       await ActivityLog.create({
         action: 'CLIENT_MARKED_HANDLED',
         actor: 'client',
-        details: `Client Alex Morgan marked "${email.subject}" as handled.`,
+        details: `Client ${email.clientName || 'Principal'} marked "${email.subject}" as handled.`,
         emailId: email._id,
         emailSubject: email.subject
       });
@@ -208,7 +208,7 @@ router.post('/:id/client-action', async (req, res) => {
 
       // Prepend an internal client direction to the conversation thread
       email.messages.push({
-        sender: { name: 'Alex Morgan (Client Note)', email: email.accountEmail },
+        sender: { name: `${email.clientName || 'Client'} (Note)`, email: email.accountEmail },
         recipient: { name: 'Assistant', email: 'assistant@company.com' },
         date: new Date(),
         subject: `Internal Delegation: ${email.subject}`,
@@ -219,7 +219,7 @@ router.post('/:id/client-action', async (req, res) => {
       await ActivityLog.create({
         action: 'CLIENT_DELEGATED',
         actor: 'client',
-        details: `Client Alex Morgan delegated "${email.subject}" to assistant: "${note || 'Take over'}"`,
+        details: `Client ${email.clientName || 'Principal'} delegated "${email.subject}" to assistant: "${note || 'Take over'}"`,
         emailId: email._id,
         emailSubject: email.subject,
         meta: { note }
@@ -235,7 +235,7 @@ router.post('/:id/client-action', async (req, res) => {
       await ActivityLog.create({
         action: 'CLIENT_DECISION_RECORDED',
         actor: 'client',
-        details: `Client decided: ${decision} on "${email.subject}"`,
+        details: `Client ${email.clientName || 'Principal'} decided: ${decision} on "${email.subject}"`,
         emailId: email._id,
         emailSubject: email.subject
       });
@@ -259,7 +259,7 @@ router.post('/:id/reply', async (req, res) => {
 
     const newMessage = {
       sender: {
-        name: asAssistant ? 'Antigravity Executive Assistant' : 'Alex Morgan',
+        name: asAssistant ? 'Executive Assistant' : (email.clientName || 'Executive Principal'),
         email: email.accountEmail
       },
       recipient: email.sender,

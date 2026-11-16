@@ -89,7 +89,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
                 2. Client Portal
               </span>
               <p className="text-xs text-[#444746]">
-                Zen executive view showing only matters requiring Alex's personal attention with 1-click delegation!
+                Zen executive view showing only matters requiring personal attention with 1-click delegation across any client!
               </p>
             </div>
           </div>
@@ -109,11 +109,11 @@ export default function OnboardingModal({ isOpen, onClose }) {
           <ul className="space-y-2.5 text-xs text-[#1f1f1f]">
             <li className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#1e8e3e]" />
-              <span><strong>Simulate Email:</strong> Inject new custom or preset emails to watch real-time AI triage.</span>
+              <span><strong>Simulate Email:</strong> Inject new custom or preset emails to watch real-time AI triage for any client.</span>
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#1e8e3e]" />
-              <span><strong>Ask AI Copilot:</strong> Query inboxes naturally like "Show me emails that need Alex's attention".</span>
+              <span><strong>Ask AI Copilot:</strong> Query inboxes naturally like "Show me emails that need Sarah's attention" or "What does Marcus need to sign?".</span>
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#1e8e3e]" />
