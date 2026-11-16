@@ -71,37 +71,48 @@ export default function ClientPortal({
 
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6">
-      {/* Client Perspective Switcher Bar (for Reviewers & Multi-Client Principals) */}
-      {clientList.length > 1 && (
-        <div className="bg-white border border-[#eaedf1] rounded-2xl p-2.5 flex items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#747775] font-poppins pl-1">
-              Active Executive View:
-            </span>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {clientList.map((c) => {
-                const isSelected = activeClient === c.name;
-                return (
-                  <button
-                    key={c.name}
-                    onClick={() => onSelectClient && onSelectClient(c.name)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium font-poppins transition flex items-center gap-1.5 ${
-                      isSelected
-                        ? 'bg-[#1e8e3e] text-white shadow-2xs font-semibold'
-                        : 'bg-[#f0f4f9] hover:bg-[#eaedf1] text-[#444746]'
-                    }`}
-                  >
-                    <span>{c.name}</span>
-                    <span className="text-[10px] opacity-75 hidden sm:inline">({c.role.split(',')[0]})</span>
-                  </button>
-                );
-              })}
+      {/* Client Perspective Switcher Bar (Active Executive Dropdown List) */}
+      {clientList.length > 0 && (
+        <div className="bg-white border border-[#eaedf1] rounded-2xl p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#1e8e3e] animate-pulse"></span>
+              <label 
+                htmlFor="executive-dropdown"
+                className="text-xs font-semibold text-[#444746] font-poppins uppercase tracking-wider"
+              >
+                Active Executive View:
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-[#1e8e3e] text-white flex items-center justify-center font-bold text-xs font-poppins shadow-2xs flex-shrink-0">
+                {activeClient.charAt(0)}
+              </div>
+              <div className="relative inline-flex items-center">
+                <select
+                  id="executive-dropdown"
+                  value={activeClient}
+                  onChange={(e) => onSelectClient && onSelectClient(e.target.value)}
+                  className="appearance-none bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] text-xs sm:text-sm font-semibold font-poppins pl-3 pr-9 py-2 rounded-xl border border-[#dadce0] focus:outline-none focus:border-[#1e8e3e] focus:ring-2 focus:ring-[#1e8e3e]/20 cursor-pointer transition shadow-2xs"
+                >
+                  {clientList.map((c) => (
+                    <option key={c.name} value={c.name} className="py-1.5 font-poppins text-sm">
+                      {c.name} — {c.role.split(',')[0].trim()}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#747775] absolute right-2.5 pointer-events-none" />
+              </div>
             </div>
           </div>
 
-          <span className="text-[11px] text-[#747775] hidden md:inline font-lato">
-            Minimalist portal for executive principals
-          </span>
+          <div className="flex items-center gap-2 text-xs text-[#747775] font-lato">
+            <span className="hidden md:inline">Filtered for:</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#c4eed0] text-[#0f5223] font-semibold text-[11px] font-poppins">
+              {activeClientObj.name}
+            </span>
+          </div>
         </div>
       )}
 
