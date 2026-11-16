@@ -1,24 +1,64 @@
 /**
  * OmniMail AI - Intelligent Email Triage & Inbox Intelligence Engine
  * Dual-Mode Engine:
- * 1. Real Google Gemini AI (via @google/genai SDK when GEMINI_API_KEY is configured in .env)
+ * 1. Real Google Gemini AI (via Google Generative Language v1beta REST API when GEMINI_API_KEY is configured in .env)
  * 2. High-Fidelity Local Contextual NLP Heuristics Engine (offline fallback with 100% uptime)
  */
 
-const { GoogleGenAI } = require('@google/genai');
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest'];
 
-// Initialize Gemini Client if API key is present
-let geminiClient = null;
-function getGeminiClient() {
-  if (!geminiClient && process.env.GEMINI_API_KEY) {
+/**
+ * Direct REST invocation to Google Gemini v1beta API matching curl specifications:
+ * POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
+ */
+async function callGeminiApi(prompt, jsonMode = false) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  for (const model of GEMINI_MODELS) {
     try {
-      geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      console.log('✨ [AI Engine] Google Gemini AI initialized with API Key.');
-    } catch (e) {
-      console.warn('⚠️ [AI Engine] Failed to initialize Google Gemini client:', e.message);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const payload = {
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ]
+      };
+
+      if (jsonMode) {
+        payload.generationConfig = {
+          responseMimeType: 'application/json'
+        };
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-goog-api-key': apiKey
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (data.error) {
+        if (data.error.code === 503 || data.error.code === 404) {
+          console.warn(`⚠️ [AI Engine] Model ${model} returned ${data.error.code}: ${data.error.message}. Trying next model...`);
+          continue;
+        }
+        throw new Error(data.error.message || JSON.stringify(data.error));
+      }
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch (err) {
+      if (model === GEMINI_MODELS[GEMINI_MODELS.length - 1]) {
+        throw err;
+      }
     }
   }
-  return geminiClient;
+  return null;
 }
 
 // Heuristic keyword clusters (for offline fallback)
@@ -49,11 +89,9 @@ const NO_REPLY_TRIGGERS = [
  * Main classification entrypoint - tries Gemini first, falls back to heuristics
  */
 async function analyzeEmail(emailData) {
-  const client = getGeminiClient();
-
-  if (client) {
+  if (process.env.GEMINI_API_KEY) {
     try {
-      const geminiResult = await classifyWithGemini(client, emailData);
+      const geminiResult = await classifyWithGemini(emailData);
       if (geminiResult) {
         return geminiResult;
       }
@@ -69,13 +107,14 @@ async function analyzeEmail(emailData) {
 /**
  * Call real Google Gemini model for structured email triage
  */
-async function classifyWithGemini(client, emailData) {
+async function classifyWithGemini(emailData) {
   const prompt = `
-You are an executive email triage AI assisting a Personal Assistant for CEO Alex Morgan.
+You are an executive email triage AI assisting a Personal Assistant for executive principal ${emailData.clientName || 'Alex Morgan'}.
 Analyze the following email conversation and determine who is responsible for responding:
 
 EMAIL TO ANALYZE:
 - Sender: "${emailData.sender?.name || 'Unknown'}" <${emailData.sender?.email || 'N/A'}>
+- Recipient / Client: "${emailData.clientName || 'Alex Morgan'}"
 - Subject: "${emailData.subject || ''}"
 - Snippet: "${emailData.snippet || ''}"
 - Body Content:
@@ -117,15 +156,7 @@ Return ONLY a valid JSON object with the exact keys:
 }
 `;
 
-  const response = await client.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: 'application/json'
-    }
-  });
-
-  const text = response.text?.trim();
+  const text = await callGeminiApi(prompt, true);
   if (!text) return null;
 
   // Clean JSON markdown fences if returned
@@ -407,9 +438,7 @@ function generateDrafts(email, classification, hasMeeting) {
  * Answers assistant questions using Gemini when available, or heuristic synthesis
  */
 async function answerCopilotQuestion(question, emails) {
-  const client = getGeminiClient();
-
-  if (client) {
+  if (process.env.GEMINI_API_KEY) {
     try {
       const emailContext = emails.slice(0, 15).map((e, idx) => `
 [${idx + 1}] Subject: "${e.subject}"
@@ -434,12 +463,7 @@ ASSISTANT'S QUESTION:
 Provide a concise, direct, professional answer summarizing the status, highlighting pending client decisions, or identifying next actions.
 `;
 
-      const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-      });
-
-      const answerText = response.text?.trim();
+      const answerText = await callGeminiApi(prompt, false);
       if (answerText) {
         // Find suggested relevant email IDs
         const relevantEmails = emails.filter(e => {
@@ -527,6 +551,7 @@ Provide a concise, direct, professional answer summarizing the status, highlight
 
 module.exports = {
   analyzeEmail,
+  analyzeEmailHeuristics,
   generateDrafts,
   answerCopilotQuestion
 };

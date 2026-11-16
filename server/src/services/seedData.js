@@ -1,7 +1,7 @@
 const Account = require('../models/Account');
 const Email = require('../models/Email');
 const ActivityLog = require('../models/ActivityLog');
-const { analyzeEmail } = require('./aiEngine');
+const { analyzeEmail, analyzeEmailHeuristics } = require('./aiEngine');
 
 const SAMPLE_ACCOUNTS = [
   {
@@ -419,7 +419,7 @@ async function seedDatabase() {
     if (existingEmails < SAMPLE_EMAILS.length) {
       await Email.deleteMany({});
       for (const email of SAMPLE_EMAILS) {
-        const aiAnalysis = await analyzeEmail(email);
+        const aiAnalysis = analyzeEmailHeuristics(email);
         await Email.create({
           ...email,
           ...aiAnalysis
