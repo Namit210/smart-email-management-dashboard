@@ -110,12 +110,14 @@ async function analyzeEmail(emailData) {
  */
 async function classifyWithGemini(emailData) {
   const prompt = `
-You are an executive email triage AI assisting a Personal Assistant for executive principal ${emailData.clientName || 'Alex Morgan'}.
-Analyze the following email conversation and determine who is responsible for responding:
+You are an expert AI Email Co-pilot built specifically for a Personal Assistant who manages inboxes on behalf of multiple executive clients.
+This incoming email was received on behalf of client: "${emailData.clientName || 'Executive Principal'}".
+
+Analyze the email and advise the ASSISTANT on how to triage and handle it:
 
 EMAIL TO ANALYZE:
+- Recipient Client: "${emailData.clientName || 'Executive Principal'}"
 - Sender: "${emailData.sender?.name || 'Unknown'}" <${emailData.sender?.email || 'N/A'}>
-- Recipient / Client: "${emailData.clientName || 'Alex Morgan'}"
 - Subject: "${emailData.subject || ''}"
 - Snippet: "${emailData.snippet || ''}"
 - Body Content:
@@ -123,23 +125,23 @@ EMAIL TO ANALYZE:
 ${emailData.body || emailData.snippet || ''}
 """
 
-REPLY RESPONSIBILITY CRITERIA:
-1. "assistant_reply": Calendar scheduling or rescheduling, administrative inquiries, vendor invoices, travel logistics, document forwarding, routine coordination.
-2. "client_reply": Direct executive approvals, contracts requiring signature, confidential investor or board matters, bank wire authorizations, personal decisions that cannot be delegated.
-3. "no_reply_needed": Automated newsletters, receipts, flight confirmations, marketing updates, resolved threads.
-4. "needs_review": Ambiguous, missing context, or low confidence.
+TRIAGE GUIDANCE FOR THE ASSISTANT:
+1. "assistant_reply": Can the Assistant handle this on the client's behalf? (e.g., booking/rescheduling calendar meetings, sending availability, answering logistics, forwarding documents, processing vendor bills, conference RSVPs).
+2. "client_reply": Must the Assistant escalate this to ${emailData.clientName || 'the client'} for personal signature, financial release, legal commitment, or strategic decision?
+3. "no_reply_needed": Can the Assistant archive/mark read as informational only (newsletters, receipts, automated notifications)?
+4. "needs_review": Is this thread ambiguous or missing context?
 
 Return ONLY a valid JSON object with the exact keys:
 {
   "classification": "assistant_reply" | "client_reply" | "no_reply_needed" | "needs_review",
-  "classificationReason": "Clear, concise 1-2 sentence explanation of why this responsibility was assigned",
+  "classificationReason": "Concise 1-2 sentence advice telling the assistant why this is assigned to them or escalated to their client",
   "confidence": number between 70 and 98,
   "category": "Assistant to Reply" | "Client to Reply" | "No Reply Needed" | "Action Required" | "Meetings & Appointments" | "General",
   "urgency": "urgent" | "high" | "normal" | "low",
-  "aiSummary": "1-2 sentence executive briefing for the assistant and client",
-  "keyPoints": ["bullet point 1", "bullet point 2"],
+  "aiSummary": "1-2 sentence executive briefing for the assistant about this thread",
+  "keyPoints": ["key point 1", "key point 2"],
   "actionItems": [
-    { "text": "description of task", "assignedTo": "assistant" | "client" }
+    { "text": "Specific task description for the assistant", "assignedTo": "assistant" | "client" }
   ],
   "extractedMeeting": {
     "detected": true | false,

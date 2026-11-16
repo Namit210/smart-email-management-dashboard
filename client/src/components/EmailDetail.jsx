@@ -167,11 +167,15 @@ export default function EmailDetail({
                 <Sparkles className="w-3.5 h-3.5" />
               </div>
               <span className="text-xs font-bold uppercase tracking-wide text-[#041e49] font-poppins">
-                AI Classification: {email.classification === 'client_reply' ? 'Client to Reply' : (email.classification === 'assistant_reply' ? 'Assistant to Reply' : 'No Reply Needed')}
+                {email.classification === 'assistant_reply'
+                  ? `Assistant Action Required (on behalf of ${email.clientName || 'Client'})`
+                  : email.classification === 'client_reply'
+                  ? `Escalate to ${email.clientName || 'Client'} (Executive Signature / Sign-Off Needed)`
+                  : `Informational (No Response Needed by You or ${email.clientName || 'Client'})`}
               </span>
             </div>
             <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-white text-[#0b57d0] border border-[#d3e3fd] w-fit font-poppins">
-              {email.confidence}% Confidence Score
+              {email.confidence}% AI Confidence Score
             </span>
           </div>
 
@@ -182,6 +186,13 @@ export default function EmailDetail({
               <Bot className="w-4 h-4 text-[#0b57d0] flex-shrink-0 mt-0.5" />
             )}
             <div>
+              <span className="font-semibold text-[#0b57d0] block text-[11px] mb-0.5">
+                {email.classification === 'assistant_reply'
+                  ? `AI Guidance for You (Assistant):`
+                  : email.classification === 'client_reply'
+                  ? `Client Escalation Required for ${email.clientName || 'Client'}:`
+                  : `Triage Note:`}
+              </span>
               <span>{email.classificationReason || 'Analyzed thread content and intent.'}</span>
               {email.manualOverride && (
                 <span className="text-[#0b57d0] ml-1.5 font-normal text-[11px]">(Manually overridden)</span>
@@ -193,7 +204,7 @@ export default function EmailDetail({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-xl bg-white border border-[#eaedf1]">
               <span className="font-semibold text-[#444746] block mb-1 text-[11px] uppercase tracking-wider font-poppins">
-                Executive Briefing
+                Executive Briefing for Assistant
               </span>
               <p className="text-[#303030] leading-relaxed font-lato text-xs sm:text-sm">
                 {email.aiSummary || email.snippet}
@@ -202,7 +213,7 @@ export default function EmailDetail({
 
             <div className="p-3 rounded-xl bg-white border border-[#eaedf1]">
               <span className="font-semibold text-[#444746] block mb-1 text-[11px] uppercase tracking-wider font-poppins">
-                Action Items
+                Action Checklist
               </span>
               <div className="flex flex-col gap-1.5">
                 {email.actionItems && email.actionItems.length > 0 ? (
@@ -340,7 +351,7 @@ export default function EmailDetail({
           {/* Composer Footer */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <span className="text-[11px] text-[#747775] font-lato text-center sm:text-left">
-              Draft ready for assistant review & send.
+              Send on behalf of {email.clientName || 'Client'}.
             </span>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -361,7 +372,7 @@ export default function EmailDetail({
                 className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-white text-xs font-semibold font-poppins shadow-sm transition flex items-center gap-1.5"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{isSending ? 'Sending...' : 'Send as Assistant'}</span>
+                <span>{isSending ? 'Sending...' : `Send as Assistant for ${(email.clientName || 'Client').split(' ')[0]}`}</span>
               </button>
             </div>
           </div>

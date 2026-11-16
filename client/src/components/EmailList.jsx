@@ -83,10 +83,10 @@ export default function EmailList({
         <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
           {[
             { id: 'all', label: 'All Mail' },
-            { id: 'assistant_reply', label: 'Assistant' },
-            { id: 'client_reply', label: 'Client' },
-            { id: 'no_reply_needed', label: 'No Reply' },
-            { id: 'meetings', label: 'Calendar' }
+            { id: 'assistant_reply', label: 'For Assistant to Handle' },
+            { id: 'client_reply', label: 'Escalated to Clients' },
+            { id: 'meetings', label: 'Meetings to Book' },
+            { id: 'no_reply_needed', label: 'No Action Needed' }
           ].map((tab) => {
             const isActive = activeSegment === tab.id;
             return (

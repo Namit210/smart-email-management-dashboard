@@ -29,12 +29,12 @@ export default function Sidebar({
 }) {
   const navItems = [
     { id: 'all', label: 'All Inboxes', icon: Inbox, count: stats?.totalEmails },
-    { id: 'assistant_reply', label: 'Assistant to Reply', icon: Bot, count: stats?.assistantReplyCount, badgeColor: 'bg-[#d3e3fd] text-[#041e49]' },
-    { id: 'client_reply', label: 'Client to Reply', icon: UserCheck, count: stats?.clientPendingCount || stats?.clientReplyCount, badgeColor: 'bg-[#ffe7d6] text-[#b06000] font-semibold' },
+    { id: 'assistant_reply', label: 'Assigned to Me (Assistant)', icon: Bot, count: stats?.assistantReplyCount, badgeColor: 'bg-[#d3e3fd] text-[#041e49]' },
+    { id: 'client_reply', label: 'Escalated to Clients', icon: UserCheck, count: stats?.clientPendingCount || stats?.clientReplyCount, badgeColor: 'bg-[#ffe7d6] text-[#b06000] font-semibold' },
+    { id: 'meetings', label: 'Meetings to Schedule', icon: Calendar, count: stats?.meetingsCount, badgeColor: 'bg-[#c4eed0] text-[#0f5223]' },
+    { id: 'action_required', label: 'Urgent Action Items', icon: AlertCircle, count: stats?.urgentCount, badgeColor: 'bg-[#f9dedc] text-[#b3261e]' },
     { id: 'no_reply_needed', label: 'No Reply Needed', icon: CheckCheck, count: stats?.noReplyNeededCount, badgeColor: 'bg-[#eaedf1] text-[#444746]' },
-    { id: 'action_required', label: 'Action Required', icon: AlertCircle, count: stats?.urgentCount, badgeColor: 'bg-[#f9dedc] text-[#b3261e]' },
-    { id: 'meetings', label: 'Meetings & Calendar', icon: Calendar, count: stats?.meetingsCount, badgeColor: 'bg-[#c4eed0] text-[#0f5223]' },
-    { id: 'waiting_response', label: 'Waiting for Response', icon: Clock, count: 2, badgeColor: 'bg-[#eaedf1] text-[#444746]' },
+    { id: 'waiting_response', label: 'Waiting for External Reply', icon: Clock, count: 2, badgeColor: 'bg-[#eaedf1] text-[#444746]' },
     { id: 'starred', label: 'Starred & VIP', icon: Star, count: null },
     { id: 'archived', label: 'Archived', icon: Archive, count: null }
   ];

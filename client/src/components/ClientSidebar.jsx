@@ -45,14 +45,14 @@ export default function ClientSidebar({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm text-[#1f1f1f] font-poppins">
-                {selectedClient === 'all' ? 'Client Queue (All)' : selectedClient}
+                {selectedClient === 'all' ? 'Client Approvals Tracker' : `${selectedClient}'s Queue`}
               </h3>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#ffe7d6] text-[#b06000]">
-                {pendingEmails.length} Pending
+                {pendingEmails.length} Awaiting
               </span>
             </div>
             <p className="text-xs text-[#747775] truncate max-w-[180px]">
-              {selectedClient === 'all' ? 'Managing 3 Principals' : (activeClientObj?.role || 'Executive Principal')}
+              {selectedClient === 'all' ? 'Monitoring decisions for 3 clients' : (activeClientObj?.role || 'Executive Principal')}
             </p>
           </div>
         </div>
