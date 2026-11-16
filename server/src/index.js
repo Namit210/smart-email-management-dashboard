@@ -22,20 +22,39 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/smart_email_assistant';
 
-// Database connection helper (cached for serverless & standalone)
-let isConnected = false;
+// Database connection helper (globally cached across Vercel serverless invocations & standalone)
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 async function connectDB() {
-  if (mongoose.connection.readyState === 1) return;
-  if (!isConnected) {
-    console.log('Connecting to MongoDB...');
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 15000
-    });
-    isConnected = true;
-    console.log('✅ MongoDB connected successfully.');
-    await seedDatabase();
-    await seedDefaultAssistant();
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
   }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 5, // Prevents serverless lambdas from exhausting Atlas connection limits
+      serverSelectionTimeoutMS: 15000,
+    };
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then(async (mongooseInstance) => {
+      console.log('✅ MongoDB connected successfully.');
+      await seedDatabase();
+      await seedDefaultAssistant();
+      return mongooseInstance;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
+
+  return cached.conn;
 }
 
 // Middleware: ensure database is connected for API requests (crucial for Vercel serverless)
