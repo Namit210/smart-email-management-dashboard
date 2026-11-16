@@ -66,9 +66,9 @@ app.use((err, req, res, next) => {
 // Database connection & Server start
 async function startServer() {
   try {
-    console.log('Connecting to MongoDB at:', MONGODB_URI);
+    console.log('Connecting to MongoDB');
     await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 15000
     });
     console.log('✅ MongoDB connected successfully.');
 
