@@ -102,3 +102,49 @@ export const fetchStats = async (params = {}) => {
   const res = await fetch(`${API_BASE}/stats${query ? `?${query}` : ''}`);
   return res.json();
 };
+
+// --- Assistant Authentication API ---
+export const getStoredToken = () => localStorage.getItem('omnimail_assistant_token');
+export const setStoredToken = (token) => localStorage.setItem('omnimail_assistant_token', token);
+export const clearStoredToken = () => localStorage.removeItem('omnimail_assistant_token');
+
+export const getStoredUser = () => {
+  try {
+    const raw = localStorage.getItem('omnimail_assistant_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+export const setStoredUser = (user) => localStorage.setItem('omnimail_assistant_user', JSON.stringify(user));
+export const clearStoredUser = () => localStorage.removeItem('omnimail_assistant_user');
+
+export const loginAssistant = async (email, password) => {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+};
+
+export const registerAssistant = async (userData) => {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData)
+  });
+  return res.json();
+};
+
+export const fetchCurrentAssistant = async () => {
+  const token = getStoredToken();
+  if (!token) return { success: false, error: 'No token stored' };
+
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  return res.json();
+};

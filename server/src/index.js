@@ -15,6 +15,7 @@ const authRoutes = require('./routes/auth.routes');
 const emailRoutes = require('./routes/email.routes');
 const aiRoutes = require('./routes/ai.routes');
 const statsRoutes = require('./routes/stats.routes');
+const { router: userAuthRoutes, seedDefaultAssistant } = require('./routes/userAuth.routes');
 const { seedDatabase } = require('./services/seedData');
 
 const app = express();
@@ -38,6 +39,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', userAuthRoutes);
 app.use('/api/accounts', authRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/ai', aiRoutes);
@@ -72,6 +74,7 @@ async function startServer() {
 
     // Seed realistic prototype dataset
     await seedDatabase();
+    await seedDefaultAssistant();
 
     app.listen(PORT, () => {
       console.log(`🚀 Smart Email Management Server running on port ${PORT}`);

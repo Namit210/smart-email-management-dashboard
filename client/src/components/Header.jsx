@@ -10,7 +10,8 @@ import {
   ChevronDown,
   Menu,
   X,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 
 export default function Header({
@@ -24,6 +25,8 @@ export default function Header({
   clientList = [],
   clientPortalUser,
   setClientPortalUser,
+  assistantUser,
+  onLogout,
   onSync,
   isSyncing,
   onOpenSimulate,
@@ -194,6 +197,38 @@ export default function Header({
           >
             <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
+
+          {/* Assistant User Profile & Logout */}
+          {assistantUser && (
+            <div className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 border-l border-[#eaedf1]">
+              <div 
+                className="flex items-center gap-2 px-1.5 py-1 rounded-full bg-white border border-[#eaedf1] hover:bg-[#f8fafd] transition"
+                title={`Logged in as ${assistantUser.name} (${assistantUser.title || 'Assistant'})`}
+              >
+                <img
+                  src={assistantUser.avatar || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=128&q=80"}
+                  alt={assistantUser.name}
+                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-[#dadce0]"
+                />
+                <div className="hidden xl:flex flex-col text-left pr-1">
+                  <span className="text-xs font-semibold text-[#1f1f1f] font-poppins leading-tight truncate max-w-[110px]">
+                    {assistantUser.name}
+                  </span>
+                  <span className="text-[10px] text-[#747775] truncate max-w-[110px]">
+                    {assistantUser.title?.split('/')[0] || 'Assistant'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={onLogout}
+                title="Sign Out of Assistant Account"
+                className="p-1.5 sm:p-2 rounded-full hover:bg-[#f9dedc] text-[#747775] hover:text-[#b3261e] transition border border-transparent hover:border-[#f2b8b5]"
+              >
+                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

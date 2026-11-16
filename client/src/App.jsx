@@ -10,6 +10,7 @@ import AICopilotDrawer from './components/AICopilotDrawer';
 import SimulateEmailModal from './components/SimulateEmailModal';
 import OnboardingModal from './components/OnboardingModal';
 import ConnectAccountModal from './components/ConnectAccountModal';
+import AuthPage from './components/AuthPage';
 import {
   fetchAccounts,
   fetchEmails,
@@ -21,10 +22,15 @@ import {
   sendReply,
   toggleEmailFlag,
   simulateIncomingEmail,
-  resetInboxData
+  resetInboxData,
+  getStoredUser,
+  clearStoredToken,
+  clearStoredUser,
+  fetchCurrentAssistant
 } from './services/api';
 
 export default function App() {
+  const [currentAssistantUser, setCurrentAssistantUser] = useState(() => getStoredUser());
   const [currentView, setCurrentView] = useState('assistant'); // 'assistant' | 'client'
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState('all');
@@ -67,6 +73,29 @@ export default function App() {
       { name: 'Marcus Vance', role: 'Chairman & Angel Investor, Vance Holdings', email: 'marcus.vance@vanceholdings.com' }
     ];
   }, [accounts]);
+
+  // Verify stored session on mount
+  useEffect(() => {
+    async function verifyAuth() {
+      if (getStoredUser()) {
+        try {
+          const res = await fetchCurrentAssistant();
+          if (res.success && res.user) {
+            setCurrentAssistantUser(res.user);
+          }
+        } catch (e) {
+          // ignore error
+        }
+      }
+    }
+    verifyAuth();
+  }, []);
+
+  const handleLogout = () => {
+    clearStoredToken();
+    clearStoredUser();
+    setCurrentAssistantUser(null);
+  };
 
   // Set default right sidebar open on wide screens
   useEffect(() => {
@@ -256,6 +285,10 @@ export default function App() {
     }
   };
 
+  if (!currentAssistantUser) {
+    return <AuthPage onAuthSuccess={(user) => setCurrentAssistantUser(user)} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#f6f8fc] text-[#1f1f1f] flex flex-col font-sans selection:bg-[#c2e7ff] selection:text-[#001d35]">
       {/* Top Google-style Navigation Bar */}
@@ -270,6 +303,8 @@ export default function App() {
         clientList={clientList}
         clientPortalUser={clientPortalUser}
         setClientPortalUser={setClientPortalUser}
+        assistantUser={currentAssistantUser}
+        onLogout={handleLogout}
         onSync={handleSync}
         isSyncing={isSyncing}
         onOpenSimulate={() => setSimulateOpen(true)}
