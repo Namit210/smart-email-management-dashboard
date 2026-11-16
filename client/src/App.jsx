@@ -21,6 +21,9 @@ import {
   clientAction,
   sendReply,
   toggleEmailFlag,
+  deleteEmail,
+  toggleActionItem,
+  saveDraft,
   simulateIncomingEmail,
   resetInboxData,
   getStoredUser,
@@ -244,6 +247,41 @@ export default function App() {
     }
   };
 
+  const handleDeleteEmail = async (emailId) => {
+    try {
+      const res = await deleteEmail(emailId);
+      if (res.success) {
+        setEmails(prev => prev.filter(e => e._id !== emailId));
+        setSelectedEmailId(null);
+        await refreshStats();
+      }
+    } catch (err) {
+      console.error('Delete email failed:', err);
+    }
+  };
+
+  const handleToggleActionItem = async (emailId, itemIndex, completed) => {
+    try {
+      const res = await toggleActionItem(emailId, itemIndex, completed);
+      if (res.success) {
+        setEmails(prev => prev.map(e => e._id === emailId ? res.email : e));
+      }
+    } catch (err) {
+      console.error('Toggle action item failed:', err);
+    }
+  };
+
+  const handleSaveDraft = async (emailId, draftText, tone) => {
+    try {
+      const res = await saveDraft(emailId, draftText, tone);
+      if (res.success) {
+        setEmails(prev => prev.map(e => e._id === emailId ? res.email : e));
+      }
+    } catch (err) {
+      console.error('Save draft failed:', err);
+    }
+  };
+
   const handleSimulate = async (data) => {
     try {
       const res = await simulateIncomingEmail(data);
@@ -365,6 +403,9 @@ export default function App() {
                   onSendReply={handleSendReply}
                   onToggleFlag={handleToggleFlag}
                   onClientAction={handleClientAction}
+                  onDeleteEmail={handleDeleteEmail}
+                  onToggleActionItem={handleToggleActionItem}
+                  onSaveDraft={handleSaveDraft}
                 />
               ) : (
                 /* Full-Width Gmail-Style Email List */

@@ -72,6 +72,38 @@ export const toggleEmailFlag = async (id, field) => {
   return res.json();
 };
 
+export const deleteEmail = async (id) => {
+  const res = await fetch(`${API_BASE}/emails/${id}`, {
+    method: 'DELETE'
+  });
+  return res.json();
+};
+
+export const toggleActionItem = async (id, itemIndex, completed) => {
+  const res = await fetch(`${API_BASE}/emails/${id}/action-items/${itemIndex}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ completed })
+  });
+  return res.json();
+};
+
+export const saveDraft = async (id, draftText, tone) => {
+  const res = await fetch(`${API_BASE}/emails/${id}/draft`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ draftText, tone })
+  });
+  return res.json();
+};
+
+export const disconnectAccount = async (id) => {
+  const res = await fetch(`${API_BASE}/accounts/${id}`, {
+    method: 'DELETE'
+  });
+  return res.json();
+};
+
 export const simulateIncomingEmail = async (emailData) => {
   const res = await fetch(`${API_BASE}/emails/simulate`, {
     method: 'POST',

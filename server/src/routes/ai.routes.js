@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Email = require('../models/Email');
+const ActivityLog = require('../models/ActivityLog');
 const { answerCopilotQuestion, generateDrafts, analyzeEmail } = require('../services/aiEngine');
 
 // Copilot Q&A
@@ -13,6 +14,14 @@ router.post('/ask', async (req, res) => {
 
     const emails = await Email.find({ status: { $ne: 'archived' } }).sort({ receivedAt: -1 });
     const response = await answerCopilotQuestion(question, emails);
+
+    // Persist copilot consultation in real database activity log
+    await ActivityLog.create({
+      action: 'COPILOT_QUERY',
+      actor: 'assistant',
+      details: `Copilot consulted: "${question.slice(0, 55)}${question.length > 55 ? '...' : ''}"`,
+      meta: { question, referencedEmails: response.referencedEmailIds }
+    });
 
     res.json({ success: true, ...response });
   } catch (err) {

@@ -383,6 +383,92 @@ router.post('/simulate', async (req, res) => {
   }
 });
 
+// DELETE /api/emails/:id - Delete an email thread permanently from database
+router.delete('/:id', async (req, res) => {
+  try {
+    const email = await Email.findByIdAndDelete(req.params.id);
+    if (!email) {
+      return res.status(404).json({ success: false, error: 'Email thread not found' });
+    }
+
+    await ActivityLog.create({
+      action: 'EMAIL_DELETED',
+      actor: 'assistant',
+      details: `Deleted email thread "${email.subject}"`,
+      meta: { emailId: email._id, subject: email.subject }
+    });
+
+    res.json({ success: true, message: 'Email deleted successfully from database' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PATCH /api/emails/:id/action-items/:itemIndex - Toggle action item completion in database
+router.patch('/:id/action-items/:itemIndex', async (req, res) => {
+  try {
+    const { id, itemIndex } = req.params;
+    const { completed } = req.body;
+    const email = await Email.findById(id);
+    if (!email) {
+      return res.status(404).json({ success: false, error: 'Email thread not found' });
+    }
+
+    const idx = parseInt(itemIndex, 10);
+    if (email.actionItems && email.actionItems[idx]) {
+      email.actionItems[idx].completed = typeof completed === 'boolean' 
+        ? completed 
+        : !email.actionItems[idx].completed;
+      email.markModified('actionItems');
+      await email.save();
+
+      await ActivityLog.create({
+        action: 'ACTION_ITEM_TOGGLED',
+        actor: 'assistant',
+        details: `Action item "${email.actionItems[idx].text}" marked as ${email.actionItems[idx].completed ? 'completed' : 'pending'}.`,
+        emailId: email._id,
+        emailSubject: email.subject
+      });
+    }
+
+    res.json({ success: true, email, actionItems: email.actionItems });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PATCH /api/emails/:id/draft - Persist draft text edits in database
+router.patch('/:id/draft', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { draftText, tone } = req.body;
+    const email = await Email.findById(id);
+    if (!email) {
+      return res.status(404).json({ success: false, error: 'Email thread not found' });
+    }
+
+    if (!email.replyDraft) {
+      email.replyDraft = { drafts: [], status: 'drafted' };
+    }
+    email.replyDraft.activeDraftText = draftText;
+    email.replyDraft.status = 'drafted';
+
+    if (tone) {
+      const existingDraft = email.replyDraft.drafts.find(d => d.tone === tone);
+      if (existingDraft) {
+        existingDraft.body = draftText;
+      }
+    }
+
+    email.markModified('replyDraft');
+    await email.save();
+
+    res.json({ success: true, email, message: 'Draft saved in database' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // POST /api/emails/reset - Reset to default seed dataset
 router.post('/reset', async (req, res) => {
   try {

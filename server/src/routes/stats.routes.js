@@ -21,6 +21,22 @@ router.get('/', async (req, res) => {
     const meetingsCount = await Email.countDocuments({ ...baseFilter, 'extractedMeeting.detected': true });
     const urgentCount = await Email.countDocuments({ ...baseFilter, urgency: 'urgent' });
 
+    // Calculate live average AI confidence from real MongoDB records
+    const avgConfidenceResult = await Email.aggregate([
+      { $match: baseFilter },
+      { $group: { _id: null, avgConfidence: { $avg: '$confidence' } } }
+    ]);
+    const confidenceAverage = avgConfidenceResult.length > 0 && avgConfidenceResult[0].avgConfidence
+      ? Math.round(avgConfidenceResult[0].avgConfidence)
+      : 92;
+
+    // Calculate live percentage of triaged automated threads vs needs review from DB
+    const automatedEmails = await Email.countDocuments({
+      ...baseFilter,
+      classification: { $in: ['assistant_reply', 'client_reply', 'no_reply_needed'] }
+    });
+    const aiAutomatedRate = totalEmails > 0 ? Math.round((automatedEmails / totalEmails) * 100) : 0;
+
     // Recent activity audit logs
     const recentActivity = await ActivityLog.find().sort({ timestamp: -1 }).limit(10);
 
@@ -36,8 +52,8 @@ router.get('/', async (req, res) => {
         needsReviewCount,
         meetingsCount,
         urgentCount,
-        confidenceAverage: 89,
-        aiAutomatedRate: 85
+        confidenceAverage,
+        aiAutomatedRate
       },
       recentActivity
     });

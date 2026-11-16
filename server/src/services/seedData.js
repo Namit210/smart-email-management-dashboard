@@ -406,18 +406,16 @@ const SAMPLE_EMAILS = [
 
 async function seedDatabase() {
   try {
-    // Re-seed accounts
+    // Seed accounts only if collection is completely empty
     const existingAccounts = await Account.countDocuments();
-    if (existingAccounts < SAMPLE_ACCOUNTS.length) {
-      await Account.deleteMany({});
+    if (existingAccounts === 0) {
       await Account.insertMany(SAMPLE_ACCOUNTS);
       console.log(`✅ Seeded ${SAMPLE_ACCOUNTS.length} executive client accounts.`);
     }
 
-    // Re-seed emails
+    // Seed emails only if collection is completely empty
     const existingEmails = await Email.countDocuments();
-    if (existingEmails < SAMPLE_EMAILS.length) {
-      await Email.deleteMany({});
+    if (existingEmails === 0) {
       for (const email of SAMPLE_EMAILS) {
         const aiAnalysis = analyzeEmailHeuristics(email);
         await Email.create({

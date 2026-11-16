@@ -26,7 +26,10 @@ export default function EmailDetail({
   onUpdateClassification,
   onSendReply,
   onToggleFlag,
-  onClientAction
+  onClientAction,
+  onDeleteEmail,
+  onToggleActionItem,
+  onSaveDraft
 }) {
   const [selectedTone, setSelectedTone] = useState('professional');
   const [draftText, setDraftText] = useState('');
@@ -55,6 +58,9 @@ export default function EmailDetail({
     const draft = email.replyDraft?.drafts?.find(d => d.tone === tone);
     if (draft) {
       setDraftText(draft.body);
+      if (onSaveDraft) {
+        onSaveDraft(email._id, draft.body, tone);
+      }
     }
   };
 
@@ -71,10 +77,14 @@ export default function EmailDetail({
   };
 
   const toggleActionItem = (idx) => {
+    const newState = !actionItemStates[idx];
     setActionItemStates(prev => ({
       ...prev,
-      [idx]: !prev[idx]
+      [idx]: newState
     }));
+    if (onToggleActionItem) {
+      onToggleActionItem(email._id, idx, newState);
+    }
   };
 
   return (
@@ -118,6 +128,18 @@ export default function EmailDetail({
             title="Star email"
           >
             <Star className={`w-4 h-4 ${email.isStarred ? 'fill-[#e37400]' : ''}`} />
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm(`Permanently delete "${email.subject}" from the database?`)) {
+                if (onDeleteEmail) onDeleteEmail(email._id);
+              }
+            }}
+            className="p-1.5 sm:p-2 rounded-full hover:bg-[#fce8e6] text-[#747775] hover:text-[#b3261e] transition"
+            title="Delete email thread"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
 
@@ -339,11 +361,12 @@ export default function EmailDetail({
             </div>
           </div>
 
-          {/* Editable Draft */}
+          {/* Editable Draft (persisted to database) */}
           <textarea
             rows={4}
             value={draftText}
             onChange={(e) => setDraftText(e.target.value)}
+            onBlur={() => onSaveDraft && onSaveDraft(email._id, draftText, selectedTone)}
             placeholder="Edit draft response before sending..."
             className="w-full bg-white border border-[#dadce0] rounded-xl p-3 text-xs sm:text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] transition leading-relaxed font-poppins"
           />
