@@ -22,6 +22,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/smart_email_assistant';
 
+// Database connection helper (cached for serverless & standalone)
+let isConnected = false;
+async function connectDB() {
+  if (mongoose.connection.readyState === 1) return;
+  if (!isConnected) {
+    console.log('Connecting to MongoDB...');
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 15000
+    });
+    isConnected = true;
+    console.log('✅ MongoDB connected successfully.');
+    await seedDatabase();
+    await seedDefaultAssistant();
+  }
+}
+
+// Middleware: ensure database is connected for API requests (crucial for Vercel serverless)
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error('❌ MongoDB connection error:', err.message);
+    }
+  }
+  next();
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -45,7 +73,7 @@ app.use('/api/emails', emailRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/stats', statsRoutes);
 
-// Static client build serving
+// Static client build serving (for standalone deployment)
 const clientDistPath = path.join(__dirname, '../../client/dist');
 if (fs.existsSync(clientDistPath)) {
   app.use(express.static(clientDistPath));
@@ -63,30 +91,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
 });
 
-// Database connection & Server start
-async function startServer() {
-  try {
-    console.log('Connecting to MongoDB');
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 15000
-    });
-    console.log('✅ MongoDB connected successfully.');
-
-    // Seed realistic prototype dataset
-    await seedDatabase();
-    await seedDefaultAssistant();
-
+// Start standalone HTTP server only when run directly (e.g. `node server/src/index.js` or `npm start`)
+if (require.main === module) {
+  connectDB().catch(err => {
+    console.warn('⚠️ Starting HTTP server in offline fallback mode:', err.message);
+  }).finally(() => {
     app.listen(PORT, () => {
       console.log(`🚀 Smart Email Management Server running on port ${PORT}`);
       console.log(`🌐 Application URL: http://localhost:${PORT}`);
     });
-  } catch (err) {
-    console.error('❌ MongoDB connection failed:', err.message);
-    console.log('Starting HTTP server in offline fallback mode...');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT} (Database unavailable)`);
-    });
-  }
+  });
 }
 
-startServer();
+module.exports = app;
