@@ -76,7 +76,7 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-xl w-full p-4 sm:p-7 shadow-2xl flex flex-col gap-4 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-[#eaedf1]">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-[#c2e7ff] text-[#001d35]">
@@ -181,18 +181,18 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition"
+              className="px-4 py-2.5 sm:py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !subject.trim() || !body.trim()}
-              className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center gap-1.5"
+              className="px-5 py-2.5 sm:py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center justify-center gap-1.5"
             >
               <Send className="w-4 h-4" />
               <span>{isSubmitting ? 'Analyzing with AI...' : 'Simulate & Run AI Triage'}</span>

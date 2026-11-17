@@ -40,7 +40,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl flex flex-col gap-4">
+      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-md w-full p-4 sm:p-7 shadow-2xl flex flex-col gap-4 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-[#eaedf1]">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-[#c2e7ff] text-[#001d35]">
@@ -68,7 +68,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
               <label className="block text-xs font-semibold text-[#1f1f1f] mb-2 font-poppins">
                 Select Email Provider:
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setProvider('gmail')}
@@ -131,18 +131,18 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition"
+                className="px-4 py-2.5 sm:py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!email.trim()}
-                className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center gap-1.5"
+                className="px-5 py-2.5 sm:py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center justify-center gap-1.5"
               >
                 <span>Continue</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -152,7 +152,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
         ) : (
           <div className="flex flex-col gap-4">
             <div className="p-3.5 rounded-2xl bg-[#f0f4f9] flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#c2e7ff] text-[#001d35] flex items-center justify-center font-bold text-sm font-poppins">
+              <div className="w-10 h-10 rounded-full bg-[#c2e7ff] text-[#001d35] flex items-center justify-center font-bold text-sm font-poppins flex-shrink-0">
                 {provider === 'gmail' ? 'G' : 'M'}
               </div>
               <div className="truncate">
@@ -184,15 +184,15 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
             </div>
 
             <div className="p-3 rounded-xl bg-[#f8fafd] border border-[#eaedf1] flex items-center gap-2 text-xs text-[#747775] font-lato">
-              <Lock className="w-3.5 h-3.5 text-[#0b57d0]" />
+              <Lock className="w-3.5 h-3.5 text-[#0b57d0] flex-shrink-0" />
               <span>256-bit encrypted credentials. Revocable anytime.</span>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-[#eaedf1]">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-4 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746]"
+                className="px-4 py-2.5 sm:py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] text-center"
               >
                 Back
               </button>
@@ -200,7 +200,7 @@ export default function ConnectAccountModal({ isOpen, onClose, onConnect }) {
                 type="button"
                 onClick={handleAuthorize}
                 disabled={isSubmitting}
-                className="px-5 py-2 rounded-full bg-[#1e8e3e] hover:bg-[#167030] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm flex items-center gap-1.5"
+                className="px-5 py-2.5 sm:py-2 rounded-full bg-[#1e8e3e] hover:bg-[#167030] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm flex items-center justify-center gap-1.5"
               >
                 {isSubmitting ? (
                   <>

@@ -359,7 +359,7 @@ export default function App() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-2 sm:py-3 flex flex-col">
+      <main className={`flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-2 sm:py-3 flex flex-col ${selectedEmailId ? 'pb-4 lg:pb-3' : 'pb-20 lg:pb-3'}`}>
         {currentView === 'client' ? (
           /* Client-Facing View (Executive Zen Mode) */
           <ClientPortal
@@ -457,6 +457,7 @@ export default function App() {
         toggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
         clientPendingCount={clientPendingCount}
         assistantCount={stats?.assistantReplyCount || 0}
+        isEmailDetailOpen={!!selectedEmailId}
       />
 
       {/* AI Copilot Slide-over Drawer */}

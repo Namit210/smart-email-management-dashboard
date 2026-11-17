@@ -88,7 +88,7 @@ export default function EmailDetail({
   };
 
   return (
-    <div className="flex-1 bg-white border border-[#eaedf1] rounded-2xl overflow-hidden shadow-xs flex flex-col h-full mb-16 lg:mb-0">
+    <div className="flex-1 bg-white border border-[#eaedf1] rounded-2xl overflow-hidden shadow-xs flex flex-col h-full mb-4 lg:mb-0">
       {/* Gmail-Style Top Action Bar */}
       <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-[#eaedf1] flex flex-wrap items-center justify-between gap-2 bg-[#f8fafd]">
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -149,7 +149,7 @@ export default function EmailDetail({
           <select
             value={email.classification}
             onChange={(e) => onUpdateClassification(email._id, e.target.value)}
-            className="bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] border border-[#eaedf1] rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold font-poppins focus:outline-none cursor-pointer"
+            className="bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] border border-[#eaedf1] rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold font-poppins focus:outline-none cursor-pointer max-w-[130px] sm:max-w-none"
           >
             <option value="assistant_reply">Assistant to Reply</option>
             <option value="client_reply">Client to Reply</option>
@@ -372,18 +372,18 @@ export default function EmailDetail({
           />
 
           {/* Composer Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <span className="text-[11px] text-[#747775] font-lato text-center sm:text-left">
               Send on behalf of {email.clientName || 'Client'}.
             </span>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(draftText);
                   alert('Draft copied to clipboard!');
                 }}
-                className="px-3.5 py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition flex items-center gap-1.5"
+                className="px-3.5 py-2.5 sm:py-2 rounded-full border border-[#dadce0] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] transition flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[44px] sm:min-h-0"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>Copy</span>
@@ -392,7 +392,7 @@ export default function EmailDetail({
               <button
                 onClick={handleSendReply}
                 disabled={isSending || !draftText.trim()}
-                className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-white text-xs font-semibold font-poppins shadow-sm transition flex items-center gap-1.5"
+                className="px-5 py-2.5 sm:py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-white text-xs font-semibold font-poppins shadow-sm transition flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[44px] sm:min-h-0"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>{isSending ? 'Sending...' : `Send as Assistant for ${(email.clientName || 'Client').split(' ')[0]}`}</span>

@@ -294,7 +294,7 @@ export default function AuthPage({ onAuthSuccess }) {
   };
 
   return (
-    <div className="w-full min-h-screen lg:h-screen lg:overflow-hidden bg-[#090d16] flex flex-col lg:flex-row font-sans selection:bg-[#38bdf8] selection:text-[#0f172a]">
+    <div className="w-full min-h-[100dvh] lg:h-screen lg:overflow-hidden bg-[#090d16] flex flex-col-reverse lg:flex-row font-sans selection:bg-[#38bdf8] selection:text-[#0f172a]">
       
       {/* ======================================================== */}
       {/* LEFT COLUMN: HackerRank-Style Dark Feature Showcase (Carousel) */}
@@ -407,9 +407,27 @@ export default function AuthPage({ onAuthSuccess }) {
       {/* ======================================================== */}
       {/* RIGHT COLUMN: HackerRank-Style Spacious Auth Form */}
       {/* ======================================================== */}
-      <div className="w-full lg:w-[48%] lg:h-full bg-white flex flex-col justify-center items-center p-6 sm:p-10 lg:p-16 overflow-y-auto">
-        <div className="max-w-md w-full mx-auto my-auto py-4">
+      <div className="w-full lg:w-[48%] lg:h-full bg-white flex flex-col justify-center items-center px-4 py-8 sm:p-10 lg:p-16 overflow-y-auto">
+        <div className="max-w-md w-full mx-auto my-auto py-2 sm:py-4">
           
+          {/* Mobile-Only Brand Header */}
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#f1f5f9] lg:hidden">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#0b57d0] to-[#38bdf8] p-0.5 shadow-md flex items-center justify-center flex-shrink-0">
+              <div className="w-full h-full bg-[#090d16] rounded-[10px] flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-[#38bdf8]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-base font-poppins tracking-tight text-[#0f172a]">OmniMail AI</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-[#10b981]/15 text-[#059669]">
+                  Assistant OS
+                </span>
+              </div>
+              <span className="text-xs text-[#64748b] font-lato">Executive Inbox Management Workspace</span>
+            </div>
+          </div>
+
           {/* Segmented Control Toggle (Log In vs Sign Up) */}
           <div className="p-1 bg-[#f1f5f9] rounded-2xl flex items-center mb-8 border border-[#e2e8f0]">
             <button

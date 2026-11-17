@@ -76,7 +76,7 @@ export default function EmailList({
   };
 
   return (
-    <div className="flex-1 bg-white border border-[#eaedf1] rounded-2xl overflow-hidden shadow-xs flex flex-col mb-16 lg:mb-0">
+    <div className="flex-1 bg-white border border-[#eaedf1] rounded-2xl overflow-hidden shadow-xs flex flex-col mb-0">
       {/* Google-Style List Toolbar */}
       <div className="px-3 sm:px-4 py-2.5 border-b border-[#eaedf1] flex flex-col sm:flex-row gap-2.5 items-center justify-between bg-white">
         

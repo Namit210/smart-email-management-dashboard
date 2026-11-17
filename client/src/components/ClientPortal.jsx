@@ -70,11 +70,11 @@ export default function ClientPortal({
   const firstName = activeClient.split(' ')[0];
 
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6">
+    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6 pb-28 lg:pb-6">
       {/* Client Perspective Switcher Bar (Active Executive Dropdown List) */}
       {clientList.length > 0 && (
         <div className="bg-white border border-[#eaedf1] rounded-2xl p-3 sm:px-4 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#1e8e3e] animate-pulse"></span>
               <label 
@@ -85,16 +85,16 @@ export default function ClientPortal({
               </label>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="w-7 h-7 rounded-full bg-[#1e8e3e] text-white flex items-center justify-center font-bold text-xs font-poppins shadow-2xs flex-shrink-0">
                 {activeClient.charAt(0)}
               </div>
-              <div className="relative inline-flex items-center">
+              <div className="relative flex-1 sm:flex-initial inline-flex items-center">
                 <select
                   id="executive-dropdown"
                   value={activeClient}
                   onChange={(e) => onSelectClient && onSelectClient(e.target.value)}
-                  className="appearance-none bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] text-xs sm:text-sm font-semibold font-poppins pl-3 pr-9 py-2 rounded-xl border border-[#dadce0] focus:outline-none focus:border-[#1e8e3e] focus:ring-2 focus:ring-[#1e8e3e]/20 cursor-pointer transition shadow-2xs"
+                  className="w-full sm:w-auto appearance-none bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] text-xs sm:text-sm font-semibold font-poppins pl-3 pr-9 py-2 rounded-xl border border-[#dadce0] focus:outline-none focus:border-[#1e8e3e] focus:ring-2 focus:ring-[#1e8e3e]/20 cursor-pointer transition shadow-2xs"
                 >
                   {clientList.map((c) => (
                     <option key={c.name} value={c.name} className="py-1.5 font-poppins text-sm">
@@ -108,7 +108,7 @@ export default function ClientPortal({
           </div>
 
           <div className="flex items-center gap-2 text-xs text-[#747775] font-lato">
-            <span className="hidden md:inline">Filtered for:</span>
+            <span className="hidden sm:inline">Filtered for:</span>
             <span className="px-2.5 py-0.5 rounded-full bg-[#c4eed0] text-[#0f5223] font-semibold text-[11px] font-poppins">
               {activeClientObj.name}
             </span>
@@ -260,17 +260,17 @@ export default function ClientPortal({
               </div>
 
               {/* Actions Footer */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#f0f4f9] mt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#f0f4f9] mt-2">
                 <button
                   onClick={() => setExpandedEmailId(isExpanded ? null : email._id)}
-                  className="flex items-center gap-1 text-xs text-[#747775] hover:text-[#0b57d0] font-medium font-poppins transition"
+                  className="flex items-center gap-1 text-xs text-[#747775] hover:text-[#0b57d0] font-medium font-poppins transition self-start sm:self-auto py-1"
                 >
                   <FileText className="w-4 h-4" />
                   <span>{isExpanded ? 'Hide conversation thread' : 'Review full conversation'}</span>
                   {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
 
-                <div className="flex items-center flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                   {!email.clientAttention?.handled ? (
                     <>
                       <button
@@ -278,7 +278,7 @@ export default function ClientPortal({
                           setDelegateModalEmail(email);
                           setDelegateNote('');
                         }}
-                        className="px-4 py-2 rounded-full border border-[#b8d4fb] bg-[#d3e3fd]/40 hover:bg-[#d3e3fd] text-xs font-semibold font-poppins text-[#041e49] transition flex items-center gap-1.5"
+                        className="px-4 py-2.5 sm:py-2 rounded-full border border-[#b8d4fb] bg-[#d3e3fd]/40 hover:bg-[#d3e3fd] text-xs font-semibold font-poppins text-[#041e49] transition flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[44px] sm:min-h-0"
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
                         <span>Delegate to Assistant</span>
@@ -286,7 +286,7 @@ export default function ClientPortal({
 
                       <button
                         onClick={() => handleQuickApprove(email._id, email.subject)}
-                        className="px-4 py-2 rounded-full bg-[#1e8e3e] hover:bg-[#167030] text-xs font-semibold font-poppins text-white shadow-xs transition flex items-center gap-1.5"
+                        className="px-4 py-2.5 sm:py-2 rounded-full bg-[#1e8e3e] hover:bg-[#167030] text-xs font-semibold font-poppins text-white shadow-xs transition flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[44px] sm:min-h-0"
                       >
                         <Check className="w-3.5 h-3.5" />
                         <span>Quick Approve</span>
@@ -294,14 +294,14 @@ export default function ClientPortal({
 
                       <button
                         onClick={() => handleMarkHandled(email._id, email.subject)}
-                        className="px-4 py-2 rounded-full bg-[#f0f4f9] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] border border-[#eaedf1] transition flex items-center gap-1.5"
+                        className="px-4 py-2.5 sm:py-2 rounded-full bg-[#f0f4f9] hover:bg-[#eaedf1] text-xs font-semibold font-poppins text-[#444746] border border-[#eaedf1] transition flex items-center justify-center gap-1.5 w-full sm:w-auto min-h-[44px] sm:min-h-0"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#1e8e3e]" />
                         <span>Mark as Handled</span>
                       </button>
                     </>
                   ) : (
-                    <span className="text-xs text-[#1e8e3e] font-semibold font-poppins flex items-center gap-1.5 bg-[#c4eed0]/40 px-3 py-1.5 rounded-full">
+                    <span className="text-xs text-[#1e8e3e] font-semibold font-poppins flex items-center justify-center gap-1.5 bg-[#c4eed0]/40 px-3 py-1.5 rounded-full">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>{email.clientAttention?.clientDecision || 'Handled'}</span>
                     </span>

@@ -75,7 +75,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
       badge: 'Dual Interface',
       content: (
         <div className="flex flex-col gap-3 text-sm text-[#444746] font-lato leading-relaxed">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-4 rounded-2xl bg-[#eaf1fb] border border-[#d3e3fd]">
               <span className="font-bold text-[#041e49] block mb-1 font-poppins text-xs uppercase tracking-wider">
                 1. Assistant View
@@ -129,7 +129,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl flex flex-col justify-between min-h-[420px]">
+      <div className="bg-white border border-[#eaedf1] rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl flex flex-col justify-between max-h-[90dvh] overflow-y-auto">
         <div>
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-[#eaedf1]">

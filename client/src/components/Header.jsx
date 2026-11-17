@@ -75,7 +75,7 @@ export default function Header({
         </div>
 
         {/* Center: Google-Style Search Bar */}
-        <div className="flex-1 max-w-2xl mx-1 sm:mx-4">
+        <div className="flex-1 max-w-2xl mx-1 sm:mx-4 min-w-0">
           <div className="relative flex items-center w-full">
             <Search className="w-4 h-4 text-[#444746] absolute left-3.5 pointer-events-none" />
             <input
@@ -97,7 +97,7 @@ export default function Header({
         </div>
 
         {/* Right: Controls, Multi-Client Switcher & Perspective Switcher */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
           {/* Multi-Client Filter Dropdown (Assistant View) */}
           {currentView === 'assistant' && (
@@ -123,7 +123,7 @@ export default function Header({
           <div className="flex items-center bg-[#eaedf1] p-0.5 sm:p-1 rounded-full">
             <button
               onClick={() => setCurrentView('assistant')}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold font-poppins transition ${
+              className={`flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold font-poppins transition ${
                 currentView === 'assistant'
                   ? 'bg-white text-[#0b57d0] shadow-xs'
                   : 'text-[#444746] hover:text-[#1f1f1f]'
@@ -135,7 +135,7 @@ export default function Header({
             </button>
             <button
               onClick={() => setCurrentView('client')}
-              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold font-poppins transition ${
+              className={`flex items-center gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold font-poppins transition ${
                 currentView === 'client'
                   ? 'bg-[#1e8e3e] text-white shadow-xs'
                   : 'text-[#444746] hover:text-[#1f1f1f]'
@@ -171,11 +171,11 @@ export default function Header({
             <span>Ask AI</span>
           </button>
 
-          {/* Toggle Client Sidebar */}
+          {/* Toggle Client Sidebar (visible on tablet/desktop; on small phones, it's accessed via the bottom nav bar) */}
           <button
             onClick={toggleRightSidebar}
             title={rightSidebarOpen ? 'Hide Client Queue' : 'Show Client Queue'}
-            className={`p-1.5 sm:p-2 rounded-full border transition flex items-center justify-center relative ${
+            className={`hidden sm:flex p-1.5 sm:p-2 rounded-full border transition items-center justify-center relative ${
               rightSidebarOpen
                 ? 'bg-[#ffe7d6] border-[#ffd8bf] text-[#b06000]'
                 : 'bg-white border-[#eaedf1] text-[#444746] hover:bg-[#f0f4f9]'

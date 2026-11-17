@@ -17,12 +17,19 @@ export default function MobileBottomNav({
   onOpenSimulate,
   toggleRightSidebar,
   clientPendingCount,
-  assistantCount
+  assistantCount,
+  isEmailDetailOpen
 }) {
+  // Hide bottom nav and FAB when viewing email thread so user has full screen and no collision with reply composer
+  if (isEmailDetailOpen) return null;
+
   return (
     <>
       {/* Floating Action Button (FAB) for Simulate Email (above bottom bar, right side) */}
-      <div className="fixed bottom-20 right-4 z-40 lg:hidden">
+      <div 
+        className="fixed right-4 z-40 lg:hidden"
+        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         <button
           onClick={onOpenSimulate}
           className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[#c2e7ff] hover:bg-[#b3e0ff] text-[#001d35] font-poppins font-medium text-xs shadow-lg shadow-[#0b57d0]/15 active:scale-95 transition-all"
@@ -33,8 +40,11 @@ export default function MobileBottomNav({
         </button>
       </div>
 
-      {/* Sticky Bottom Navigation Bar (like Mobile Gmail) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#eaedf1] px-2 py-1.5 flex items-center justify-around lg:hidden shadow-lg shadow-slate-900/10">
+      {/* Sticky Bottom Navigation Bar (like Mobile Gmail with safe area support) */}
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#eaedf1] px-2 pt-1.5 flex items-center justify-around lg:hidden shadow-lg shadow-slate-900/10"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
+      >
         
         {/* All Inboxes */}
         <button
