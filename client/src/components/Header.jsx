@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Sparkles, 
   RefreshCw, 
@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Plus,
-  LogOut
+  LogOut,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function Header({
@@ -39,10 +40,99 @@ export default function Header({
   toggleRightSidebar,
   rightSidebarOpen,
   clientPendingCount,
-  onToggleMobileMenu
+  onToggleMobileMenu,
+  selectedEmailId
 }) {
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const mobileInputRef = useRef(null);
+  const desktopInputRef = useRef(null);
+
+  // Focus mobile input and position cursor at end when expanded
+  useEffect(() => {
+    if (isSearchExpanded) {
+      const timer = setTimeout(() => {
+        mobileInputRef.current?.focus();
+        if (mobileInputRef.current && searchQuery) {
+          const len = mobileInputRef.current.value.length;
+          mobileInputRef.current.setSelectionRange(len, len);
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchExpanded]);
+
+  // Auto-collapse if resized to desktop/tablet
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 640 && isSearchExpanded) {
+        setIsSearchExpanded(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isSearchExpanded]);
+
+  // Auto-collapse when navigating to an email thread or switching perspective
+  useEffect(() => {
+    if (isSearchExpanded) {
+      setIsSearchExpanded(false);
+    }
+  }, [selectedEmailId, currentView]);
+
+  const handleOpenMobileSearch = () => {
+    if (window.innerWidth < 640) {
+      setIsSearchExpanded(true);
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-30 bg-[#f6f8fc] border-b border-[#eaedf1] px-3 sm:px-4 lg:px-6 py-2.5">
+    <header className="sticky top-0 z-30 bg-[#f6f8fc] border-b border-[#eaedf1] px-3 sm:px-4 lg:px-6 py-2.5 relative">
+      {/* Full-Width Expanded Search Overlay for Mobile Devices */}
+      {isSearchExpanded && (
+        <div className="absolute inset-0 z-40 bg-[#f6f8fc] px-2.5 sm:px-4 py-2 flex items-center gap-2 sm:hidden shadow-xs border-b border-[#eaedf1] animate-in fade-in duration-150">
+          <button
+            onClick={() => setIsSearchExpanded(false)}
+            className="p-2 -ml-1 rounded-full hover:bg-[#eaedf1] text-[#444746] hover:text-[#1f1f1f] transition flex-shrink-0"
+            title="Back to inbox view"
+            aria-label="Close expanded search"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          <div className="relative flex-1 flex items-center min-w-0">
+            <Search className="w-4 h-4 text-[#444746] absolute left-3.5 pointer-events-none" />
+            <input
+              ref={mobileInputRef}
+              type="text"
+              placeholder="Search in mail..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsSearchExpanded(false);
+                } else if (e.key === 'Enter') {
+                  mobileInputRef.current?.blur();
+                }
+              }}
+              className="w-full bg-white text-[#1f1f1f] placeholder-[#747775] text-base font-poppins rounded-full pl-10 pr-9 py-2 border border-[#0b57d0]/40 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0b57d0]/20"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  mobileInputRef.current?.focus();
+                }}
+                className="absolute right-2.5 p-1 rounded-full hover:bg-[#eaedf1] text-[#444746] transition"
+                title="Clear search"
+                aria-label="Clear search query"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Left: Hamburger (Three lines for mobile) + Brand & Logo */}
@@ -76,19 +166,28 @@ export default function Header({
 
         {/* Center: Google-Style Search Bar */}
         <div className="flex-1 max-w-2xl mx-1 sm:mx-4 min-w-0">
-          <div className="relative flex items-center w-full">
-            <Search className="w-4 h-4 text-[#444746] absolute left-3.5 pointer-events-none" />
+          <div 
+            onClick={handleOpenMobileSearch}
+            className="relative flex items-center w-full cursor-text"
+          >
+            <Search className="w-4 h-4 text-[#444746] absolute left-3 sm:left-3.5 pointer-events-none" />
             <input
+              ref={desktopInputRef}
               type="text"
               placeholder="Search in mail..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#eaf1fb] hover:bg-[#dfe9f8] focus:bg-white text-[#1f1f1f] placeholder-[#5e5e5e] text-xs sm:text-sm font-poppins rounded-full pl-10 sm:pl-11 pr-8 sm:pr-10 py-2 sm:py-2.5 transition border border-transparent focus:border-[#c2e7ff] focus:shadow-sm focus:outline-none"
+              onFocus={handleOpenMobileSearch}
+              className="w-full bg-[#eaf1fb] hover:bg-[#dfe9f8] focus:bg-white text-[#1f1f1f] placeholder-[#5e5e5e] text-xs sm:text-sm font-poppins rounded-full pl-8 sm:pl-11 pr-7 sm:pr-10 py-1.5 sm:py-2.5 transition border border-transparent focus:border-[#c2e7ff] focus:shadow-sm focus:outline-none truncate"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 p-1 rounded-full hover:bg-slate-200 text-[#444746]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSearchQuery('');
+                }}
+                className="absolute right-2 sm:right-2.5 p-1 rounded-full hover:bg-slate-200 text-[#444746]"
+                title="Clear search text"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -101,22 +200,33 @@ export default function Header({
           
           {/* Multi-Client Filter Dropdown (Assistant View) */}
           {currentView === 'assistant' && (
-            <div className="hidden lg:flex items-center gap-1 bg-white border border-[#dadce0] rounded-full px-2.5 py-1 text-xs shadow-2xs hover:border-[#0b57d0] transition">
-              <User className="w-3.5 h-3.5 text-[#0b57d0]" />
-              <select
-                value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
-                className="bg-transparent font-semibold text-[#1f1f1f] focus:outline-none cursor-pointer font-poppins pr-1 text-xs"
-                title="Filter inbox by client"
+            clientList.length > 0 ? (
+              <div className="hidden lg:flex items-center gap-1 bg-white border border-[#dadce0] rounded-full px-2.5 py-1 text-xs shadow-2xs hover:border-[#0b57d0] transition">
+                <User className="w-3.5 h-3.5 text-[#0b57d0]" />
+                <select
+                  value={selectedClient}
+                  onChange={(e) => setSelectedClient(e.target.value)}
+                  className="bg-transparent font-semibold text-[#1f1f1f] focus:outline-none cursor-pointer font-poppins pr-1 text-xs"
+                  title="Filter inbox by client"
+                >
+                  <option value="all">👥 All Clients ({clientList.length})</option>
+                  {clientList.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      👤 {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenConnectModal}
+                className="hidden lg:flex items-center gap-1.5 bg-white border border-[#dadce0] hover:border-[#0b57d0] text-[#0b57d0] rounded-full px-3 py-1 text-xs font-semibold shadow-2xs transition font-poppins"
+                title="Connect client email account"
               >
-                <option value="all">👥 All Clients ({clientList.length})</option>
-                {clientList.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    👤 {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Client</span>
+              </button>
+            )
           )}
 
           {/* Perspective Switcher (Assistant vs Client) */}

@@ -61,13 +61,17 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
     if (!subject.trim() || !body.trim()) return;
 
     setIsSubmitting(true);
-    const matchedClient = clientList.find(c => c.name === targetClient);
+    const clientName = targetClient.trim() || 'Alex Morgan';
+    const matchedClient = clientList.find(c => c.name === clientName);
+    const emailSlug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '.');
+    const accountEmail = matchedClient?.email || `${emailSlug}@company.com`;
+
     await onSimulate({
       subject,
       senderName: senderName.trim() || 'Simulated Sender',
       senderEmail: senderEmail.trim() || 'sender@external.com',
-      clientName: targetClient,
-      accountEmail: matchedClient?.email || 'alex.morgan@company.com',
+      clientName,
+      accountEmail,
       body
     });
     setIsSubmitting(false);
@@ -117,7 +121,7 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
 
         {/* Custom Input Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 mt-1">
-          {clientList.length > 0 && (
+          {clientList.length > 0 ? (
             <div>
               <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Target Client / Recipient</label>
               <select
@@ -131,6 +135,18 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
                   </option>
                 ))}
               </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Target Client / Principal Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Alex Morgan or your executive's name"
+                value={targetClient}
+                onChange={(e) => setTargetClient(e.target.value)}
+                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] focus:outline-none focus:border-[#0b57d0] font-poppins"
+                required
+              />
             </div>
           )}
 

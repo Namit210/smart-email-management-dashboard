@@ -7,7 +7,9 @@ import {
   CheckCheck, 
   AlertCircle, 
   Inbox,
-  User
+  User,
+  Sparkles,
+  Plus
 } from 'lucide-react';
 
 export default function EmailList({
@@ -19,7 +21,11 @@ export default function EmailList({
   onQuickOverride,
   isLoading,
   activeSegment,
-  onSelectSegment
+  onSelectSegment,
+  onOpenConnectModal,
+  onOpenSimulate,
+  assistantName,
+  accountsCount = 0
 }) {
   const getBadge = (classification, confidence, manualOverride) => {
     switch (classification) {
@@ -136,15 +142,48 @@ export default function EmailList({
             <span className="font-poppins">Synchronizing and triaging inbox with AI...</span>
           </div>
         ) : emails.length === 0 ? (
-          <div className="p-16 text-center text-[#747775] flex flex-col items-center justify-center gap-3">
-            <div className="p-4 bg-[#f0f4f9] rounded-full">
-              <Inbox className="w-10 h-10 text-[#747775]" />
+          accountsCount === 0 ? (
+            /* Fresh Registered User Onboarding Hero */
+            <div className="p-8 sm:p-14 text-center text-[#747775] flex flex-col items-center justify-center gap-4 my-auto">
+              <div className="w-16 h-16 rounded-3xl bg-[#eaf1fb] text-[#0b57d0] flex items-center justify-center shadow-xs">
+                <Sparkles className="w-8 h-8 text-[#0b57d0]" />
+              </div>
+              <div className="max-w-md">
+                <h3 className="text-lg sm:text-xl font-bold text-[#1f1f1f] font-poppins">
+                  Welcome{assistantName ? `, ${assistantName.split(' ')[0]}` : ''}!
+                </h3>
+                <p className="text-xs sm:text-sm text-[#747775] mt-1.5 font-lato leading-relaxed">
+                  Your assistant workspace is completely fresh. Connect your first executive client mailbox, or simulate an incoming thread to watch real-time AI triage in action.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 mt-2 w-full sm:w-auto">
+                <button
+                  onClick={onOpenConnectModal}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold font-poppins shadow-xs transition w-full sm:w-auto min-h-[44px] sm:min-h-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Connect Client Mailbox</span>
+                </button>
+                <button
+                  onClick={onOpenSimulate}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#041e49] text-xs font-semibold font-poppins border border-[#eaedf1] transition w-full sm:w-auto min-h-[44px] sm:min-h-0"
+                >
+                  <Sparkles className="w-4 h-4 text-[#0b57d0]" />
+                  <span>Simulate Incoming Email</span>
+                </button>
+              </div>
             </div>
-            <div>
-              <p className="text-base font-semibold text-[#1f1f1f] font-poppins">No emails in this view</p>
-              <p className="text-xs text-[#747775] mt-1 font-lato">Try switching categories or clearing search filters.</p>
+          ) : (
+            <div className="p-16 text-center text-[#747775] flex flex-col items-center justify-center gap-3">
+              <div className="p-4 bg-[#f0f4f9] rounded-full">
+                <Inbox className="w-10 h-10 text-[#747775]" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-[#1f1f1f] font-poppins">No emails in this view</p>
+                <p className="text-xs text-[#747775] mt-1 font-lato">Try switching categories or clearing search filters.</p>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           emails.map((email) => {
             const isUnread = !email.isRead;

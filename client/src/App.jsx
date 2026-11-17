@@ -37,8 +37,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState('assistant'); // 'assistant' | 'client'
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState('all');
-  const [selectedClient, setSelectedClient] = useState('all'); // 'all' | 'Alex Morgan' | 'Sarah Jenkins' | 'Marcus Vance'
-  const [clientPortalUser, setClientPortalUser] = useState('Alex Morgan');
+  const [selectedClient, setSelectedClient] = useState('all');
+  const [clientPortalUser, setClientPortalUser] = useState('');
   const [emails, setEmails] = useState([]);
   const [selectedEmailId, setSelectedEmailId] = useState(null);
   const [stats, setStats] = useState(null);
@@ -56,7 +56,7 @@ export default function App() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [connectModalOpen, setConnectModalOpen] = useState(false);
 
-  // Extract unique clients
+  // Extract unique clients strictly from this assistant's connected accounts
   const clientList = useMemo(() => {
     const map = new Map();
     accounts.forEach(a => {
@@ -69,13 +69,19 @@ export default function App() {
         });
       }
     });
-    const list = Array.from(map.values());
-    return list.length > 0 ? list : [
-      { name: 'Alex Morgan', role: 'Founder & CEO, Apex Systems', email: 'alex.morgan@company.com' },
-      { name: 'Sarah Jenkins', role: 'Managing Partner, Horizon Ventures', email: 'sarah.jenkins@horizonvc.com' },
-      { name: 'Marcus Vance', role: 'Chairman & Angel Investor, Vance Holdings', email: 'marcus.vance@vanceholdings.com' }
-    ];
+    return Array.from(map.values());
   }, [accounts]);
+
+  // Keep clientPortalUser in sync with available clients
+  useEffect(() => {
+    if (clientList.length > 0) {
+      if (!clientList.some(c => c.name === clientPortalUser)) {
+        setClientPortalUser(clientList[0].name);
+      }
+    } else {
+      setClientPortalUser('');
+    }
+  }, [clientList]);
 
   // Verify stored session on mount
   useEffect(() => {
@@ -98,6 +104,10 @@ export default function App() {
     clearStoredToken();
     clearStoredUser();
     setCurrentAssistantUser(null);
+    setEmails([]);
+    setAccounts([]);
+    setStats(null);
+    setSelectedEmailId(null);
   };
 
   // Set default right sidebar open on wide screens
@@ -107,10 +117,12 @@ export default function App() {
     }
   }, []);
 
-  // Initial load
+  // Initial / user change load
   useEffect(() => {
-    loadAllData();
-  }, []);
+    if (currentAssistantUser) {
+      loadAllData();
+    }
+  }, [currentAssistantUser?.id || currentAssistantUser?.email]);
 
   // Reload emails when segment, client or account changes
   useEffect(() => {
@@ -356,6 +368,7 @@ export default function App() {
         rightSidebarOpen={rightSidebarOpen}
         clientPendingCount={clientPendingCount}
         onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        selectedEmailId={selectedEmailId}
       />
 
       {/* Main Container */}
@@ -369,6 +382,7 @@ export default function App() {
             onSelectClient={setClientPortalUser}
             onClientAction={handleClientAction}
             onSwitchToAssistant={() => setCurrentView('assistant')}
+            onOpenConnectModal={() => setConnectModalOpen(true)}
           />
         ) : (
           /* Assistant Dashboard (Gmail Layout: Left Nav + Central List/Detail + Right Client Queue) */
@@ -420,6 +434,10 @@ export default function App() {
                   isLoading={isLoading}
                   activeSegment={activeSegment}
                   onSelectSegment={setActiveSegment}
+                  onOpenConnectModal={() => setConnectModalOpen(true)}
+                  onOpenSimulate={() => setSimulateOpen(true)}
+                  assistantName={currentAssistantUser?.name}
+                  accountsCount={accounts.length}
                 />
               )}
             </div>
@@ -464,6 +482,9 @@ export default function App() {
       <AICopilotDrawer
         isOpen={copilotOpen}
         onClose={() => setCopilotOpen(false)}
+        assistantUser={currentAssistantUser}
+        clientList={clientList}
+        emailsCount={emails.length}
         onSelectEmail={(id) => {
           setSelectedEmailId(id);
           setCurrentView('assistant');

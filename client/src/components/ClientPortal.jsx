@@ -19,10 +19,11 @@ import {
 export default function ClientPortal({
   clientEmails,
   clientList = [],
-  activeClient = 'Alex Morgan',
+  activeClient = '',
   onSelectClient,
   onClientAction,
-  onSwitchToAssistant
+  onSwitchToAssistant,
+  onOpenConnectModal
 }) {
   const [expandedEmailId, setExpandedEmailId] = useState(null);
   const [delegateModalEmail, setDelegateModalEmail] = useState(null);
@@ -67,7 +68,41 @@ export default function ClientPortal({
     setDelegateNote('');
   };
 
-  const firstName = activeClient.split(' ')[0];
+  const firstName = activeClient ? activeClient.split(' ')[0] : 'Client';
+
+  if (clientList.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 flex flex-col gap-6 pb-28 lg:pb-6">
+        <div className="p-10 sm:p-16 text-center bg-white border border-[#eaedf1] rounded-3xl flex flex-col items-center justify-center gap-4 shadow-xs">
+          <div className="w-16 h-16 rounded-3xl bg-[#c4eed0]/50 text-[#1e8e3e] flex items-center justify-center shadow-xs">
+            <UserCheck className="w-8 h-8 text-[#1e8e3e]" />
+          </div>
+          <div className="max-w-md">
+            <h3 className="text-xl font-bold text-[#1f1f1f] font-poppins">No Executive Clients Connected Yet</h3>
+            <p className="text-xs sm:text-sm text-[#747775] mt-2 font-lato leading-relaxed">
+              The Client Portal provides a minimalistic approval interface for your principals. When you connect an executive's mailbox, threads requiring their personal decision or signature will appear here.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 mt-2 w-full sm:w-auto">
+            {onOpenConnectModal && (
+              <button
+                onClick={onOpenConnectModal}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#1e8e3e] hover:bg-[#167030] text-white text-xs font-semibold font-poppins shadow-xs transition w-full sm:w-auto min-h-[44px] sm:min-h-0"
+              >
+                <span>Connect Client Mailbox</span>
+              </button>
+            )}
+            <button
+              onClick={onSwitchToAssistant}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#f0f4f9] hover:bg-[#eaedf1] text-[#041e49] text-xs font-semibold font-poppins border border-[#eaedf1] transition w-full sm:w-auto min-h-[44px] sm:min-h-0"
+            >
+              <span>Switch to Assistant View</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 flex flex-col gap-6 pb-28 lg:pb-6">

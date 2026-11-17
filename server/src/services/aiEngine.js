@@ -442,7 +442,17 @@ function generateDrafts(email, classification, hasMeeting) {
  * AI Inbox Copilot Q&A
  * Answers assistant questions using Gemini when available, or heuristic synthesis
  */
-async function answerCopilotQuestion(question, emails) {
+async function answerCopilotQuestion(question, emails, user = null) {
+  const assistantName = (user && user.name) ? user.name : 'Assistant';
+  const uniqueClients = [...new Set(emails.map(e => e.clientName).filter(Boolean))];
+
+  if (!emails || emails.length === 0) {
+    return {
+      answer: `Hello ${assistantName}! You currently don't have any emails in your connected inboxes. Once you add client accounts or simulate incoming emails, I will analyze thread classifications, identify executive action items, extract calendar invitations, and draft automated replies for you.`,
+      suggestedEmails: []
+    };
+  }
+
   if (process.env.GEMINI_API_KEY) {
     try {
       const emailContext = emails.slice(0, 15).map((e, idx) => `
@@ -456,8 +466,12 @@ Meeting Detected: ${e.extractedMeeting?.detected ? `${e.extractedMeeting.title} 
 Status: ${e.status}
 `).join('\n');
 
+      const clientDescription = uniqueClients.length > 0
+        ? `executive clients (${uniqueClients.join(', ')})`
+        : 'connected client inboxes';
+
       const prompt = `
-You are an executive inbox copilot for a personal assistant managing communications across multiple executive clients (e.g. Alex Morgan - CEO, Sarah Jenkins - Managing Partner, Marcus Vance - Chairman).
+You are an executive inbox copilot for ${assistantName}, a personal assistant managing communications across ${clientDescription}.
 Each email thread specifies the recipient client.
 Answer the assistant's question accurately, providing client-specific context when asked or summarizing across all clients:
 
@@ -474,12 +488,13 @@ Provide a concise, direct, professional answer summarizing the status, highlight
       if (answerText) {
         // Find suggested relevant email IDs
         const relevantEmails = emails.filter(e => {
-          const s = (e.subject || '').toLowerCase();
           const q = question.toLowerCase();
           const client = (e.clientName || '').toLowerCase();
-          return (q.includes('sarah') && client.includes('sarah')) ||
-                 (q.includes('marcus') && client.includes('marcus')) ||
-                 (q.includes('alex') && client.includes('alex')) ||
+          const clientMatch = uniqueClients.some(c => {
+            const parts = c.toLowerCase().split(' ').filter(p => p.length >= 3);
+            return parts.some(p => q.includes(p)) && client.includes(parts[0] || '');
+          });
+          return clientMatch ||
                  (q.includes('client') ? e.classification === 'client_reply' :
                   q.includes('assistant') ? e.classification === 'assistant_reply' :
                   q.includes('meeting') ? e.extractedMeeting?.detected : false);
@@ -503,10 +518,15 @@ Provide a concise, direct, professional answer summarizing the status, highlight
   const meetings = emails.filter(e => e.extractedMeeting?.detected);
   const urgent = emails.filter(e => e.urgency === 'urgent');
 
-  // Specific client query
-  const specificClient = q.includes('sarah') ? 'Sarah Jenkins' :
-                         q.includes('marcus') ? 'Marcus Vance' :
-                         q.includes('alex') ? 'Alex Morgan' : null;
+  // Dynamic specific client query matching
+  let specificClient = null;
+  for (const c of uniqueClients) {
+    const parts = c.toLowerCase().split(' ').filter(p => p.length >= 3);
+    if (q.includes(c.toLowerCase()) || parts.some(p => q.includes(p))) {
+      specificClient = c;
+      break;
+    }
+  }
 
   if (specificClient) {
     const forClient = emails.filter(e => e.clientName === specificClient);
@@ -563,7 +583,7 @@ Provide a concise, direct, professional answer summarizing the status, highlight
   if (q.includes('waiting') || q.includes('pending response') || q.includes('follow-up')) {
     const waiting = emails.filter(e => e.category === 'Waiting for Response' || e.urgency === 'urgent');
     return {
-      answer: `You are currently tracking ${waiting.length || 2} conversations waiting for external response or follow-up across your clients' inboxes.`,
+      answer: `You are currently tracking ${waiting.length || 0} conversations waiting for external response or follow-up across your clients' inboxes.`,
       suggestedEmails: waiting.slice(0, 3).map(e => ({ id: e._id, subject: e.subject, sender: e.sender.name }))
     };
   }
@@ -575,8 +595,12 @@ Provide a concise, direct, professional answer summarizing the status, highlight
     };
   }
 
+  const clientFollowup = uniqueClients.length > 0
+    ? `\n\nAsk me anytime about ${uniqueClients.join(', ')}!`
+    : `\n\nConnect a client account or simulate incoming emails to get started!`;
+
   return {
-    answer: `Multi-Client Inbox Overview:\n• Total active threads: ${total}\n• Assistant to reply: ${assistantPending.length}\n• Client to reply: ${clientPending.length}\n• Meetings identified: ${meetings.length}\n• No response needed: ${emails.filter(e => e.classification === 'no_reply_needed').length}\n\nAsk me anytime about Alex Morgan, Sarah Jenkins, or Marcus Vance!`,
+    answer: `Multi-Client Inbox Overview:\n• Total active threads: ${total}\n• Assistant to reply: ${assistantPending.length}\n• Client to reply: ${clientPending.length}\n• Meetings identified: ${meetings.length}\n• No response needed: ${emails.filter(e => e.classification === 'no_reply_needed').length}${clientFollowup}`,
     suggestedEmails: []
   };
 }

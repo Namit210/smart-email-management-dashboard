@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const ActivityLog = require('../models/ActivityLog');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'omnimail_super_secret_jwt_key_2026';
 
@@ -17,11 +18,15 @@ async function seedDefaultAssistant() {
         email: 'assistant@omnimail.ai',
         password: hashedPassword,
         role: 'assistant',
+        isDemo: true,
         title: 'Lead Executive Virtual Assistant',
         agency: 'Apex Multi-Principal Office',
         avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80'
       });
       console.log('✅ Demo Assistant account seeded: assistant@omnimail.ai / password123');
+    } else if (!existing.isDemo) {
+      existing.isDemo = true;
+      await existing.save();
     }
   } catch (err) {
     console.error('Failed to seed default assistant:', err.message);
@@ -62,9 +67,18 @@ router.post('/register', async (req, res) => {
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role: 'assistant',
+      isDemo: false,
       title: title?.trim() || 'Executive Virtual Assistant',
       agency: agency?.trim() || 'Executive Support Services',
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name.trim())}`
+    });
+
+    // Create initial welcome activity log for this newly registered user
+    await ActivityLog.create({
+      userId: newUser._id,
+      action: 'USER_REGISTERED',
+      actor: 'assistant',
+      details: `Fresh workspace created for ${newUser.name}. Ready to connect executive client mailboxes.`
     });
 
     const token = jwt.sign(
@@ -83,7 +97,8 @@ router.post('/register', async (req, res) => {
         role: newUser.role,
         title: newUser.title,
         agency: newUser.agency,
-        avatar: newUser.avatar
+        avatar: newUser.avatar,
+        isDemo: false
       },
       message: 'Assistant account created successfully!'
     });
@@ -127,6 +142,8 @@ router.post('/login', async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    const isDemo = user.isDemo || user.email === 'assistant@omnimail.ai';
+
     res.json({
       success: true,
       token,
@@ -137,7 +154,8 @@ router.post('/login', async (req, res) => {
         role: user.role,
         title: user.title,
         agency: user.agency,
-        avatar: user.avatar
+        avatar: user.avatar,
+        isDemo
       },
       message: 'Logged in successfully!'
     });
@@ -163,6 +181,8 @@ router.get('/me', async (req, res) => {
       return res.status(404).json({ success: false, error: 'User not found.' });
     }
 
+    const isDemo = user.isDemo || user.email === 'assistant@omnimail.ai';
+
     res.json({
       success: true,
       user: {
@@ -172,7 +192,8 @@ router.get('/me', async (req, res) => {
         role: user.role,
         title: user.title,
         agency: user.agency,
-        avatar: user.avatar
+        avatar: user.avatar,
+        isDemo
       }
     });
   } catch (err) {

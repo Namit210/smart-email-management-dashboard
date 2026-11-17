@@ -17,6 +17,7 @@ const aiRoutes = require('./routes/ai.routes');
 const statsRoutes = require('./routes/stats.routes');
 const { router: userAuthRoutes, seedDefaultAssistant } = require('./routes/userAuth.routes');
 const { seedDatabase } = require('./services/seedData');
+const authMiddleware = require('./middleware/auth.middleware');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -84,6 +85,9 @@ app.get('/api/health', (req, res) => {
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
+
+// Authentication middleware to scope requests to active assistant user
+app.use('/api', authMiddleware);
 
 // API Routes
 app.use('/api/auth', userAuthRoutes);

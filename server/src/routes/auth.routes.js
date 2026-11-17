@@ -4,15 +4,19 @@ const Account = require('../models/Account');
 const Email = require('../models/Email');
 const ActivityLog = require('../models/ActivityLog');
 
-// Get all connected accounts
+// Get all connected accounts for the current assistant user
 router.get('/', async (req, res) => {
   try {
-    const accounts = await Account.find().sort({ isPrimary: -1, createdAt: 1 });
+    const filter = req.userId ? { userId: req.userId } : {};
+    const accounts = await Account.find(filter).sort({ isPrimary: -1, createdAt: 1 });
     
     // Enrich with count of active emails per account
     const enriched = await Promise.all(accounts.map(async (acc) => {
-      const emailCount = await Email.countDocuments({ accountEmail: acc.email, status: { $ne: 'archived' } });
-      const unreadCount = await Email.countDocuments({ accountEmail: acc.email, isRead: false, status: { $ne: 'archived' } });
+      const emailQuery = { accountEmail: acc.email, status: { $ne: 'archived' } };
+      if (req.userId) emailQuery.userId = req.userId;
+
+      const emailCount = await Email.countDocuments(emailQuery);
+      const unreadCount = await Email.countDocuments({ ...emailQuery, isRead: false });
       return {
         ...acc.toObject(),
         totalEmails: emailCount,
@@ -35,7 +39,10 @@ router.post('/connect', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email and provider are required' });
     }
 
-    const existing = await Account.findOne({ email });
+    const accountQuery = { email };
+    if (req.userId) accountQuery.userId = req.userId;
+
+    const existing = await Account.findOne(accountQuery);
     if (existing) {
       existing.status = 'connected';
       existing.lastSyncedAt = new Date();
@@ -44,6 +51,7 @@ router.post('/connect', async (req, res) => {
     }
 
     const newAccount = await Account.create({
+      userId: req.userId,
       email,
       provider,
       clientName: clientName || 'Alex Morgan',
@@ -57,6 +65,7 @@ router.post('/connect', async (req, res) => {
     });
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'ACCOUNT_CONNECTED',
       actor: 'assistant',
       details: `Connected ${provider.toUpperCase()} account for ${email}`,
@@ -72,7 +81,10 @@ router.post('/connect', async (req, res) => {
 // Trigger sync on an account
 router.post('/:id/sync', async (req, res) => {
   try {
-    const account = await Account.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const account = await Account.findOne(filter);
     if (!account) {
       return res.status(404).json({ success: false, error: 'Account not found' });
     }
@@ -92,6 +104,7 @@ router.post('/:id/sync', async (req, res) => {
     }, 1200);
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'ACCOUNT_SYNCED',
       actor: 'system',
       details: `Triggered manual mailbox synchronization for ${account.email}`,
@@ -107,7 +120,10 @@ router.post('/:id/sync', async (req, res) => {
 // Disconnect account
 router.delete('/:id', async (req, res) => {
   try {
-    const account = await Account.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const account = await Account.findOne(filter);
     if (!account) {
       return res.status(404).json({ success: false, error: 'Account not found' });
     }
@@ -116,6 +132,7 @@ router.delete('/:id', async (req, res) => {
     await account.save();
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'ACCOUNT_DISCONNECTED',
       actor: 'assistant',
       details: `Disconnected account ${account.email}`,

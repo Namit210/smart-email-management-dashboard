@@ -21,6 +21,9 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     const query = {};
+    if (req.userId) {
+      query.userId = req.userId;
+    }
 
     if (client && client !== 'all') {
       query.clientName = client;
@@ -115,7 +118,10 @@ router.get('/', async (req, res) => {
 // GET /api/emails/:id - Single email thread details
 router.get('/:id', async (req, res) => {
   try {
-    const email = await Email.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -129,7 +135,10 @@ router.get('/:id', async (req, res) => {
 router.patch('/:id/classification', async (req, res) => {
   try {
     const { classification, reason } = req.body;
-    const email = await Email.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -161,6 +170,7 @@ router.patch('/:id/classification', async (req, res) => {
     await email.save();
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'CLASSIFICATION_OVERRIDDEN',
       actor: 'assistant',
       details: `Assistant manually changed classification from ${previousClassification} to ${classification}`,
@@ -179,7 +189,10 @@ router.patch('/:id/classification', async (req, res) => {
 router.post('/:id/client-action', async (req, res) => {
   try {
     const { action, note, decision } = req.body;
-    const email = await Email.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -191,6 +204,7 @@ router.post('/:id/client-action', async (req, res) => {
       email.status = 'completed';
 
       await ActivityLog.create({
+        userId: req.userId,
         action: 'CLIENT_MARKED_HANDLED',
         actor: 'client',
         details: `Client ${email.clientName || 'Principal'} marked "${email.subject}" as handled.`,
@@ -217,6 +231,7 @@ router.post('/:id/client-action', async (req, res) => {
       });
 
       await ActivityLog.create({
+        userId: req.userId,
         action: 'CLIENT_DELEGATED',
         actor: 'client',
         details: `Client ${email.clientName || 'Principal'} delegated "${email.subject}" to assistant: "${note || 'Take over'}"`,
@@ -233,6 +248,7 @@ router.post('/:id/client-action', async (req, res) => {
       }
 
       await ActivityLog.create({
+        userId: req.userId,
         action: 'CLIENT_DECISION_RECORDED',
         actor: 'client',
         details: `Client ${email.clientName || 'Principal'} decided: ${decision} on "${email.subject}"`,
@@ -252,7 +268,10 @@ router.post('/:id/client-action', async (req, res) => {
 router.post('/:id/reply', async (req, res) => {
   try {
     const { body, subject, asAssistant = true } = req.body;
-    const email = await Email.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -279,6 +298,7 @@ router.post('/:id/reply', async (req, res) => {
     await email.save();
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'EMAIL_REPLIED',
       actor: asAssistant ? 'assistant' : 'client',
       details: `Sent reply to ${email.sender.name} regarding "${email.subject}"`,
@@ -296,7 +316,10 @@ router.post('/:id/reply', async (req, res) => {
 router.patch('/:id/toggle', async (req, res) => {
   try {
     const { field } = req.body;
-    const email = await Email.findById(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -318,17 +341,46 @@ router.patch('/:id/toggle', async (req, res) => {
 // POST /api/emails/simulate - Simulate receiving an incoming email
 router.post('/simulate', async (req, res) => {
   try {
-    const {
+    let {
       subject = 'Urgent: Approval Needed for Vendor Retainer Contract',
       senderName = 'Jonathan Reed',
       senderEmail = 'jreed@globaladvisors.com',
       body = 'Hi Alex, we need your personal sign-off on the quarterly advisory retainer before tomorrow morning. Please let us know if you approve.',
       clientName = 'Alex Morgan',
-      accountEmail = 'alex.morgan@company.com',
-      provider = 'gmail'
+      accountEmail,
+      provider = 'gmail',
+      customClientName
     } = req.body;
 
+    if (customClientName) {
+      clientName = customClientName;
+    }
+
+    if (!accountEmail || (accountEmail === 'alex.morgan@company.com' && clientName !== 'Alex Morgan')) {
+      // Find existing account for this client if exists
+      const existingAcc = await Account.findOne({ userId: req.userId, clientName });
+      accountEmail = existingAcc ? existingAcc.email : `${clientName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@company.com`;
+    }
+
+    // Ensure client account exists for this assistant user
+    if (req.userId && clientName && accountEmail) {
+      await Account.findOneAndUpdate(
+        { userId: req.userId, clientName },
+        {
+          userId: req.userId,
+          email: accountEmail,
+          provider,
+          clientName,
+          role: 'Executive Client',
+          status: 'connected',
+          lastSyncedAt: new Date()
+        },
+        { upsert: true, returnDocument: 'after' }
+      );
+    }
+
     const emailData = {
+      userId: req.userId,
       accountEmail,
       clientName,
       provider,
@@ -369,6 +421,7 @@ router.post('/simulate', async (req, res) => {
     });
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'NEW_EMAIL_SIMULATED',
       actor: 'ai',
       details: `Simulated incoming email classified as "${newEmail.classification.toUpperCase()}" with ${newEmail.confidence}% confidence.`,
@@ -386,12 +439,16 @@ router.post('/simulate', async (req, res) => {
 // DELETE /api/emails/:id - Delete an email thread permanently from database
 router.delete('/:id', async (req, res) => {
   try {
-    const email = await Email.findByIdAndDelete(req.params.id);
+    const filter = { _id: req.params.id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOneAndDelete(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
 
     await ActivityLog.create({
+      userId: req.userId,
       action: 'EMAIL_DELETED',
       actor: 'assistant',
       details: `Deleted email thread "${email.subject}"`,
@@ -409,7 +466,10 @@ router.patch('/:id/action-items/:itemIndex', async (req, res) => {
   try {
     const { id, itemIndex } = req.params;
     const { completed } = req.body;
-    const email = await Email.findById(id);
+    const filter = { _id: id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -423,6 +483,7 @@ router.patch('/:id/action-items/:itemIndex', async (req, res) => {
       await email.save();
 
       await ActivityLog.create({
+        userId: req.userId,
         action: 'ACTION_ITEM_TOGGLED',
         actor: 'assistant',
         details: `Action item "${email.actionItems[idx].text}" marked as ${email.actionItems[idx].completed ? 'completed' : 'pending'}.`,
@@ -442,7 +503,10 @@ router.patch('/:id/draft', async (req, res) => {
   try {
     const { id } = req.params;
     const { draftText, tone } = req.body;
-    const email = await Email.findById(id);
+    const filter = { _id: id };
+    if (req.userId) filter.userId = req.userId;
+
+    const email = await Email.findOne(filter);
     if (!email) {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
@@ -469,17 +533,24 @@ router.patch('/:id/draft', async (req, res) => {
   }
 });
 
-// POST /api/emails/reset - Reset to default seed dataset
+// POST /api/emails/reset - Reset to default seed dataset for demo user, or clear for registered user
 router.post('/reset', async (req, res) => {
   try {
-    await Email.deleteMany({});
-    await Account.deleteMany({});
-    await ActivityLog.deleteMany({});
-    
-    const { seedDatabase } = require('../services/seedData');
-    await seedDatabase();
+    const isDemo = req.user?.email === 'assistant@omnimail.ai';
 
-    res.json({ success: true, message: 'Inbox reset successfully with multi-client demo state' });
+    if (req.userId) {
+      await Email.deleteMany({ userId: req.userId });
+      await Account.deleteMany({ userId: req.userId });
+      await ActivityLog.deleteMany({ userId: req.userId });
+
+      if (isDemo) {
+        const { seedDemoUserData } = require('../services/seedData');
+        await seedDemoUserData(req.userId);
+        return res.json({ success: true, message: 'Inbox reset successfully with multi-client demo state' });
+      }
+    }
+
+    res.json({ success: true, message: 'Inbox reset successfully to a fresh, clean state' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

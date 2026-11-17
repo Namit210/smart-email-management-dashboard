@@ -33,6 +33,11 @@ const EmailMessageSchema = new mongoose.Schema({
 });
 
 const EmailSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  },
   accountEmail: {
     type: String,
     required: true,

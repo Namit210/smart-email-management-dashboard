@@ -7,6 +7,9 @@ router.get('/', async (req, res) => {
   try {
     const { client } = req.query;
     const baseFilter = { status: { $ne: 'archived' } };
+    if (req.userId) {
+      baseFilter.userId = req.userId;
+    }
     if (client && client !== 'all') {
       baseFilter.clientName = client;
     }
@@ -28,7 +31,7 @@ router.get('/', async (req, res) => {
     ]);
     const confidenceAverage = avgConfidenceResult.length > 0 && avgConfidenceResult[0].avgConfidence
       ? Math.round(avgConfidenceResult[0].avgConfidence)
-      : 92;
+      : (totalEmails > 0 ? 92 : 0);
 
     // Calculate live percentage of triaged automated threads vs needs review from DB
     const automatedEmails = await Email.countDocuments({
@@ -37,8 +40,9 @@ router.get('/', async (req, res) => {
     });
     const aiAutomatedRate = totalEmails > 0 ? Math.round((automatedEmails / totalEmails) * 100) : 0;
 
-    // Recent activity audit logs
-    const recentActivity = await ActivityLog.find().sort({ timestamp: -1 }).limit(10);
+    // Recent activity audit logs scoped to user
+    const logFilter = req.userId ? { userId: req.userId } : {};
+    const recentActivity = await ActivityLog.find(logFilter).sort({ timestamp: -1 }).limit(10);
 
     res.json({
       success: true,

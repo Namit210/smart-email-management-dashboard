@@ -12,11 +12,15 @@ router.post('/ask', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Question is required' });
     }
 
-    const emails = await Email.find({ status: { $ne: 'archived' } }).sort({ receivedAt: -1 });
-    const response = await answerCopilotQuestion(question, emails);
+    const emailFilter = { status: { $ne: 'archived' } };
+    if (req.userId) emailFilter.userId = req.userId;
+
+    const emails = await Email.find(emailFilter).sort({ receivedAt: -1 });
+    const response = await answerCopilotQuestion(question, emails, req.user);
 
     // Persist copilot consultation in real database activity log
     await ActivityLog.create({
+      userId: req.userId,
       action: 'COPILOT_QUERY',
       actor: 'assistant',
       details: `Copilot consulted: "${question.slice(0, 55)}${question.length > 55 ? '...' : ''}"`,

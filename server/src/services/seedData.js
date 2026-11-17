@@ -1,6 +1,8 @@
 const Account = require('../models/Account');
 const Email = require('../models/Email');
 const ActivityLog = require('../models/ActivityLog');
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const { analyzeEmail, analyzeEmailHeuristics } = require('./aiEngine');
 
 const SAMPLE_ACCOUNTS = [
@@ -404,34 +406,64 @@ const SAMPLE_EMAILS = [
   }
 ];
 
-async function seedDatabase() {
-  try {
-    // Seed accounts only if collection is completely empty
-    const existingAccounts = await Account.countDocuments();
-    if (existingAccounts === 0) {
-      await Account.insertMany(SAMPLE_ACCOUNTS);
-      console.log(`✅ Seeded ${SAMPLE_ACCOUNTS.length} executive client accounts.`);
-    }
+async function seedDemoUserData(userId) {
+  // Seed accounts for demo user
+  const existingAccounts = await Account.countDocuments({ userId });
+  if (existingAccounts === 0) {
+    const accountsToInsert = SAMPLE_ACCOUNTS.map(a => ({ ...a, userId }));
+    await Account.insertMany(accountsToInsert);
+    console.log(`✅ Seeded ${SAMPLE_ACCOUNTS.length} executive client accounts for demo user.`);
+  }
 
-    // Seed emails only if collection is completely empty
-    const existingEmails = await Email.countDocuments();
-    if (existingEmails === 0) {
-      for (const email of SAMPLE_EMAILS) {
-        const aiAnalysis = analyzeEmailHeuristics(email);
-        await Email.create({
-          ...email,
-          ...aiAnalysis
-        });
-      }
-      console.log(`✅ Seeded ${SAMPLE_EMAILS.length} email threads across 3 clients with AI analysis.`);
-
-      await ActivityLog.create({
-        action: 'INBOX_INITIALIZED',
-        actor: 'ai',
-        details: `Initial multi-client synchronization completed: 3 executive clients, ${SAMPLE_EMAILS.length} threads analyzed.`,
-        meta: { emailCount: SAMPLE_EMAILS.length }
+  // Seed emails for demo user
+  const existingEmails = await Email.countDocuments({ userId });
+  if (existingEmails === 0) {
+    for (const email of SAMPLE_EMAILS) {
+      const aiAnalysis = analyzeEmailHeuristics(email);
+      await Email.create({
+        ...email,
+        ...aiAnalysis,
+        userId
       });
     }
+    console.log(`✅ Seeded ${SAMPLE_EMAILS.length} email threads with AI analysis for demo user.`);
+
+    await ActivityLog.create({
+      action: 'INBOX_INITIALIZED',
+      actor: 'ai',
+      details: `Initial multi-client synchronization completed: 3 executive clients, ${SAMPLE_EMAILS.length} threads analyzed.`,
+      meta: { emailCount: SAMPLE_EMAILS.length },
+      userId
+    });
+  }
+}
+
+async function seedDatabase() {
+  try {
+    let demoUser = await User.findOne({ email: 'assistant@omnimail.ai' });
+    if (!demoUser) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      demoUser = await User.create({
+        name: 'Jordan Rivera',
+        email: 'assistant@omnimail.ai',
+        password: hashedPassword,
+        role: 'assistant',
+        isDemo: true,
+        title: 'Lead Executive Virtual Assistant',
+        agency: 'Apex Multi-Principal Office',
+        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&q=80'
+      });
+      console.log('✅ Demo Assistant account seeded: assistant@omnimail.ai / password123');
+    }
+
+    const demoUserId = demoUser._id;
+
+    // Migrate any legacy unassigned records in Atlas to belong to demoUser
+    await Account.updateMany({ userId: { $exists: false } }, { $set: { userId: demoUserId } });
+    await Email.updateMany({ userId: { $exists: false } }, { $set: { userId: demoUserId } });
+    await ActivityLog.updateMany({ userId: { $exists: false } }, { $set: { userId: demoUserId } });
+
+    await seedDemoUserData(demoUserId);
   } catch (err) {
     console.error('Error seeding database:', err.message);
   }
@@ -439,6 +471,7 @@ async function seedDatabase() {
 
 module.exports = {
   seedDatabase,
+  seedDemoUserData,
   SAMPLE_ACCOUNTS,
   SAMPLE_EMAILS
 };

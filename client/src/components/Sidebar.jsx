@@ -130,6 +130,13 @@ export default function Sidebar({
         </div>
 
         <div className="flex flex-col gap-1.5">
+          {accounts.length === 0 && (
+            <div className="p-3 rounded-xl bg-white border border-[#eaedf1] text-center text-xs text-[#747775]">
+              <span className="text-[11px] block text-[#1f1f1f] font-semibold font-poppins">No clients connected</span>
+              <span className="text-[10px] block mt-0.5 text-[#747775] font-lato">Click below to connect your first executive</span>
+            </div>
+          )}
+
           {accounts.map((acc) => {
             const isSelected = selectedClient === acc.clientName;
             return (

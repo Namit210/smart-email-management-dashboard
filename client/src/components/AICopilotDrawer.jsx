@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Sparkles, 
   Send, 
@@ -6,30 +6,152 @@ import {
   User, 
   X, 
   ArrowRight, 
-  Lightbulb
+  Lightbulb,
+  RotateCcw
 } from 'lucide-react';
 import { askCopilot } from '../services/api';
 
-export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
-  const [messages, setMessages] = useState([
-    {
-      sender: 'ai',
-      text: "Hello! I am your AI Executive Inbox Copilot. I analyze connected inboxes across all your clients (Alex Morgan, Sarah Jenkins, Marcus Vance) in real-time, determine reply responsibilities, extract meetings, and keep your principals focused on high-leverage decisions.\n\nHow can I help you manage the inboxes right now?",
-      suggestedEmails: []
+export default function AICopilotDrawer({ 
+  isOpen, 
+  onClose, 
+  onSelectEmail, 
+  assistantUser, 
+  clientList = [], 
+  emailsCount = 0 
+}) {
+  const assistantFirstName = useMemo(() => {
+    return assistantUser?.name ? assistantUser.name.split(' ')[0] : 'Assistant';
+  }, [assistantUser]);
+
+  const clientNames = useMemo(() => {
+    return clientList.map(c => c.name).filter(Boolean);
+  }, [clientList]);
+
+  const storageKey = useMemo(() => {
+    const uid = assistantUser?._id || assistantUser?.id || assistantUser?.email || 'default';
+    return `omnimail_copilot_chat_${uid}`;
+  }, [assistantUser]);
+
+  const getInitialGreeting = () => {
+    if (clientNames.length > 0) {
+      const clientsStr = clientNames.slice(0, 3).join(', ') + (clientNames.length > 3 ? `, and ${clientNames.length - 3} more` : '');
+      return `Hello ${assistantFirstName}! I am your AI Executive Inbox Copilot. I analyze connected inboxes across your clients (${clientsStr}) in real-time, determine reply responsibilities, extract meetings, and keep your executives focused on high-leverage decisions.\n\nHow can I help you manage the inboxes right now?`;
     }
-  ]);
+    return `Hello ${assistantFirstName}! Welcome to your AI Executive Inbox Copilot.\n\nYou currently have a fresh workspace with no connected client mailboxes yet. Once you connect an executive client or simulate incoming threads, I will automatically classify emails (Client to Reply vs. Assistant to Reply), extract meeting proposals, and compose contextual drafts.\n\nAsk me anytime about how inbox triage works, or connect a mailbox to get started!`;
+  };
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      // ignore JSON parse error
+    }
+    return [
+      {
+        sender: 'ai',
+        text: getInitialGreeting(),
+        suggestedEmails: []
+      }
+    ];
+  });
+
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestionsDismissed, setSuggestionsDismissed] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  const sampleQuestions = [
-    "Show me emails requiring client attention",
-    "What does Sarah Jenkins need to approve?",
-    "What does Marcus Vance need to sign?",
-    "What emails are assigned to me as assistant?",
-    "What meetings are coming up across all clients?"
-  ];
+  // Sync / reload history when active user changes
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    setMessages([
+      {
+        sender: 'ai',
+        text: getInitialGreeting(),
+        suggestedEmails: []
+      }
+    ]);
+    setSuggestionsDismissed(false);
+  }, [storageKey]);
+
+  // Persist messages per user
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [messages, storageKey]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading, isOpen]);
+
+  // Dynamic suggested queries based on user's actual connected clients
+  const sampleQuestions = useMemo(() => {
+    if (clientNames.length > 0) {
+      return [
+        "Show me emails requiring client attention",
+        `What does ${clientNames[0]} need to approve?`,
+        "What emails are assigned to me as assistant?",
+        "What meetings are coming up across all clients?",
+        ...(clientNames.length > 1 ? [`What does ${clientNames[1]} need to sign?`] : [])
+      ];
+    }
+    return [
+      "How does automated AI email triage work?",
+      "How do I connect an executive client mailbox?",
+      "What actions can I perform as an assistant?",
+      "How are meeting proposals extracted?"
+    ];
+  }, [clientNames]);
+
+  // Determine if suggestions should be shown:
+  // - User has not dismissed them
+  // - Conversation has no user messages yet (fresh chat session)
+  const userMessageCount = useMemo(() => {
+    return messages.filter(m => m.sender === 'user').length;
+  }, [messages]);
+
+  const showSuggestions = !suggestionsDismissed && userMessageCount === 0;
 
   if (!isOpen) return null;
+
+  const handleClearChat = () => {
+    const freshMessages = [
+      {
+        sender: 'ai',
+        text: getInitialGreeting(),
+        suggestedEmails: []
+      }
+    ];
+    setMessages(freshMessages);
+    setSuggestionsDismissed(false);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const handleSend = async (questionText) => {
     const q = (questionText || inputQuery).trim();
@@ -89,15 +211,28 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
                 <span>AI Inbox Copilot</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c4eed0] text-[#0f5223] font-semibold">Active</span>
               </h2>
-              <p className="text-xs text-[#747775] font-lato">Ask anything across all connected mailboxes</p>
+              <p className="text-xs text-[#747775] font-lato">
+                {clientNames.length > 0 
+                  ? `Inboxes: ${clientNames.slice(0, 2).join(', ')}${clientNames.length > 2 ? ` +${clientNames.length - 2}` : ''}`
+                  : `${assistantFirstName}'s Copilot`}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775] hover:text-[#1f1f1f] transition"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleClearChat}
+              title="Reset conversation"
+              className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775] hover:text-[#b3261e] transition"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-[#eaedf1] text-[#747775] hover:text-[#1f1f1f] transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Message Log */}
@@ -116,7 +251,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
                 ) : (
                   <>
                     <User className="w-3.5 h-3.5 text-[#1e8e3e]" />
-                    <span>Assistant</span>
+                    <span>{assistantFirstName}</span>
                   </>
                 )}
               </div>
@@ -161,29 +296,42 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
           {isLoading && (
             <div className="flex items-center gap-2 p-3 rounded-2xl bg-white border border-[#eaedf1] text-[#747775] text-xs w-fit shadow-xs font-poppins">
               <Sparkles className="w-4 h-4 text-[#0b57d0] animate-spin" />
-              <span>Analyzing mailbox data and composing briefing...</span>
+              <span>Analyzing mailbox data and composing response...</span>
             </div>
           )}
+
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Suggested Queries */}
-        <div className="p-3 border-t border-[#eaedf1] bg-white">
-          <div className="flex items-center gap-1.5 text-xs text-[#747775] font-semibold mb-2 font-poppins">
-            <Lightbulb className="w-3.5 h-3.5 text-[#e37400]" />
-            <span>Suggested Inquiries:</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {sampleQuestions.slice(0, 3).map((q, i) => (
+        {/* Suggested Queries - Only shown when starting fresh, dismissible with X */}
+        {showSuggestions && (
+          <div className="p-3 border-t border-[#eaedf1] bg-white transition-all">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-xs text-[#747775] font-semibold font-poppins">
+                <Lightbulb className="w-3.5 h-3.5 text-[#e37400]" />
+                <span>Suggested Inquiries:</span>
+              </div>
               <button
-                key={i}
-                onClick={() => handleSend(q)}
-                className="text-xs px-3 py-1.5 rounded-full bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] transition text-left font-poppins font-medium"
+                onClick={() => setSuggestionsDismissed(true)}
+                className="text-[11px] text-[#747775] hover:text-[#1f1f1f] p-0.5 rounded hover:bg-[#f0f4f9] transition flex items-center gap-0.5"
+                title="Dismiss suggestions"
               >
-                {q}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {sampleQuestions.slice(0, 3).map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(q)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-[#f0f4f9] hover:bg-[#eaf1fb] text-[#1f1f1f] transition text-left font-poppins font-medium border border-transparent hover:border-[#0b57d0]/20"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Input Bar */}
         <div className="p-3 border-t border-[#eaedf1] bg-white">
@@ -196,7 +344,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onSelectEmail }) {
           >
             <input
               type="text"
-              placeholder="Ask anything about your clients' inboxes..."
+              placeholder={clientNames.length > 0 ? "Ask anything about your clients' inboxes..." : "Ask copilot anything..."}
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               className="flex-1 bg-[#f0f4f9] border border-[#eaedf1] rounded-full px-4 py-2 text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] font-poppins"
