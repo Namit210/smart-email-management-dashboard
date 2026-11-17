@@ -124,10 +124,10 @@ export default function App() {
     }
   }, [currentAssistantUser?.id || currentAssistantUser?.email]);
 
-  // Reload emails when segment, client or account changes
+  // Reload emails when segment, client, account, view or client portal user changes
   useEffect(() => {
     loadEmails();
-  }, [selectedAccount, selectedClient, activeSegment, activeFilter, searchQuery]);
+  }, [selectedAccount, selectedClient, activeSegment, activeFilter, searchQuery, currentView, clientPortalUser]);
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -149,19 +149,25 @@ export default function App() {
   const loadEmails = async () => {
     try {
       const params = {};
-      if (selectedAccount !== 'all') params.account = selectedAccount;
-      if (selectedClient !== 'all') params.client = selectedClient;
-      if (activeSegment !== 'all') params.segment = activeSegment;
+      if (currentView === 'client') {
+        if (clientPortalUser) params.client = clientPortalUser;
+      } else {
+        if (selectedAccount !== 'all') params.account = selectedAccount;
+        if (selectedClient !== 'all') params.client = selectedClient;
+        if (activeSegment !== 'all') params.segment = activeSegment;
+        if (activeFilter === 'unread') params.status = 'active';
+      }
       if (searchQuery.trim()) params.search = searchQuery.trim();
-      if (activeFilter === 'unread') params.status = 'active';
 
       const emailRes = await fetchEmails(params);
       if (emailRes.success) {
         let filtered = emailRes.emails;
-        if (activeFilter === 'unread') {
-          filtered = filtered.filter(e => !e.isRead);
-        } else if (activeFilter === 'urgent') {
-          filtered = filtered.filter(e => e.urgency === 'urgent');
+        if (currentView === 'assistant') {
+          if (activeFilter === 'unread') {
+            filtered = filtered.filter(e => !e.isRead);
+          } else if (activeFilter === 'urgent') {
+            filtered = filtered.filter(e => e.urgency === 'urgent');
+          }
         }
         setEmails(filtered);
       }
@@ -247,6 +253,30 @@ export default function App() {
     }
   };
 
+  const handleMarkEmailRead = async (id) => {
+    const targetEmail = emails.find(e => e._id === id);
+    if (targetEmail && !targetEmail.isRead) {
+      // Optimistically update frontend state so unread dot clears immediately
+      setEmails(prev => prev.map(e => e._id === id ? { ...e, isRead: true } : e));
+
+      // Persist read status in backend database
+      try {
+        const res = await toggleEmailFlag(id, 'markRead');
+        if (res.success && res.email) {
+          setEmails(prev => prev.map(e => e._id === id ? res.email : e));
+        }
+        await refreshStats();
+      } catch (err) {
+        console.error('Mark email read failed:', err);
+      }
+    }
+  };
+
+  const handleSelectEmail = async (id) => {
+    setSelectedEmailId(id);
+    await handleMarkEmailRead(id);
+  };
+
   const handleToggleFlag = async (emailId, field) => {
     try {
       const res = await toggleEmailFlag(emailId, field);
@@ -296,14 +326,47 @@ export default function App() {
 
   const handleSimulate = async (data) => {
     try {
+      setIsLoading(true);
       const res = await simulateIncomingEmail(data);
-      if (res.success) {
-        setEmails(prev => [res.email, ...prev]);
+      if (res.success && res.email) {
+        // 1. Fetch updated accounts so new client accounts immediately populate clientList & sidebar
+        const accRes = await fetchAccounts();
+        if (accRes.success) {
+          setAccounts(accRes.accounts);
+        }
+
+        // 2. Clear all active filters so the new incoming email is guaranteed to be visible in the view
+        setSelectedClient('all');
+        setSelectedAccount('all');
+        setActiveSegment('all');
+        setActiveFilter('all');
+        setSearchQuery('');
+        setCurrentView('assistant');
+
+        // 3. Load full emails list from database
+        const emailRes = await fetchEmails({ status: 'active' });
+        if (emailRes.success) {
+          setEmails(emailRes.emails);
+        } else {
+          setEmails(prev => [res.email, ...prev.filter(e => e._id !== res.email._id)]);
+        }
+
+        // 4. Open email detail view for immediate inspection of AI triage and draft
         setSelectedEmailId(res.email._id);
+
+        // 5. Refresh assistant stats
         await refreshStats();
+        return true;
+      } else {
+        alert(res?.error || 'Failed to simulate email');
+        return false;
       }
     } catch (err) {
       console.error('Simulate failed:', err);
+      alert(`Simulation failed: ${err.message}`);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -376,17 +439,18 @@ export default function App() {
         {currentView === 'client' ? (
           /* Client-Facing View (Executive Zen Mode) */
           <ClientPortal
-            clientEmails={emails.filter(e => (e.classification === 'client_reply' || e.clientAttention?.required) && (!clientPortalUser || e.clientName === clientPortalUser))}
+            clientEmails={emails.filter(e => !clientPortalUser || e.clientName === clientPortalUser)}
             clientList={clientList}
             activeClient={clientPortalUser}
             onSelectClient={setClientPortalUser}
             onClientAction={handleClientAction}
             onSwitchToAssistant={() => setCurrentView('assistant')}
             onOpenConnectModal={() => setConnectModalOpen(true)}
+            onMarkRead={handleMarkEmailRead}
           />
         ) : (
           /* Assistant Dashboard (Gmail Layout: Left Nav + Central List/Detail + Right Client Queue) */
-          <div className="flex-1 flex flex-col lg:flex-row gap-3 items-stretch min-h-[calc(100vh-80px)]">
+          <div className="flex-1 flex flex-col lg:flex-row gap-3 lg:items-start items-stretch min-h-[calc(100vh-80px)]">
             
             {/* Left Sidebar Navigation (Desktop Persistent + Mobile Slide-Over Drawer) */}
             <Sidebar
@@ -407,7 +471,7 @@ export default function App() {
             />
 
             {/* Central Main View: Gmail Pattern (List OR Opened Email Details) */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 lg:h-[calc(100vh-82px)]">
               {selectedEmailId && selectedEmail ? (
                 /* Full Conversation View (opened on click, with Back button) */
                 <EmailDetail
@@ -426,7 +490,7 @@ export default function App() {
                 <EmailList
                   emails={emails}
                   selectedClient={selectedClient}
-                  onSelectEmail={(id) => setSelectedEmailId(id)}
+                  onSelectEmail={(id) => handleSelectEmail(id)}
                   activeFilter={activeFilter}
                   setActiveFilter={setActiveFilter}
                   onToggleFlag={handleToggleFlag}
@@ -451,7 +515,7 @@ export default function App() {
               selectedClient={selectedClient}
               onSelectClient={setSelectedClient}
               onSelectEmail={(id) => {
-                setSelectedEmailId(id);
+                handleSelectEmail(id);
                 setCurrentView('assistant');
               }}
               onClientAction={handleClientAction}
@@ -486,7 +550,7 @@ export default function App() {
         clientList={clientList}
         emailsCount={emails.length}
         onSelectEmail={(id) => {
-          setSelectedEmailId(id);
+          handleSelectEmail(id);
           setCurrentView('assistant');
         }}
       />

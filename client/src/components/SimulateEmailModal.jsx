@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   X, 
   Send, 
   Bot, 
   UserCheck, 
-  CheckCheck 
+  CheckCheck,
+  UserPlus
 } from 'lucide-react';
 
 export default function SimulateEmailModal({ isOpen, onClose, onSimulate, clientList = [] }) {
@@ -13,8 +14,25 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
   const [senderName, setSenderName] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
   const [body, setBody] = useState('');
-  const [targetClient, setTargetClient] = useState(clientList[0]?.name || 'Alex Morgan');
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [customClientName, setCustomClientName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync selected target client whenever modal opens or clientList changes
+  useEffect(() => {
+    if (isOpen) {
+      if (clientList.length > 0) {
+        if (!clientList.some(c => c.name === selectedClientId) && selectedClientId !== '__new__') {
+          setSelectedClientId(clientList[0].name);
+        }
+      } else {
+        setSelectedClientId('__new__');
+        if (!customClientName) {
+          setCustomClientName('Alex Morgan');
+        }
+      }
+    }
+  }, [isOpen, clientList]);
 
   const presets = [
     {
@@ -22,38 +40,47 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
       subject: 'Final Signature Required: $85,000 Strategic Partnership Agreement',
       senderName: 'Rachel Green',
       senderEmail: 'rachel@summitpartners.com',
-      body: 'Hi Alex, our board has officially approved the partnership terms. We need your personal signature and DocuSign authorization by 5:00 PM today so we can finalize the agreement.'
+      bodyTemplate: (name) => `Hi ${name}, our board has officially approved the partnership terms. We need your personal signature and DocuSign authorization by 5:00 PM today so we can finalize the agreement.`
     },
     {
       label: '📅 Meeting Scheduling (Assistant to Reply)',
       subject: 'Coffee catchup & partnership sync next Tuesday at 3pm',
       senderName: 'Michael Chang',
       senderEmail: 'mchang@hypergrowth.vc',
-      body: 'Hi Alex, really enjoyed our quick conversation at the conference. Can your assistant coordinate a 30-minute coffee meeting next Tuesday at 3:00 PM EST? Let me know what location works best.'
+      bodyTemplate: (name) => `Hi ${name}, really enjoyed our quick conversation at the conference. Can your assistant coordinate a 30-minute coffee meeting next Tuesday at 3:00 PM EST? Let me know what location works best.`
     },
     {
       label: '🧾 Vendor Invoice (Assistant to Reply)',
       subject: 'Invoice #8839 due for Design Sprint Deliverables',
       senderName: 'PixelStudio Billing',
       senderEmail: 'billing@pixelstudio.design',
-      body: 'Hi Alex, attached is invoice #8839 for the brand sprint completed last week. Total due: $2,800. Please forward to your assistant for processing before the net-15 due date.'
+      bodyTemplate: (name) => `Hi ${name}, attached is invoice #8839 for the brand sprint completed last week. Total due: $2,800. Please forward to your assistant for processing before the net-15 due date.`
     },
     {
       label: '📰 Newsletter Update (No Reply Needed)',
       subject: 'SaaS Weekly Digest: Scaling Executive AI Agents',
       senderName: 'SaaS Briefings',
       senderEmail: 'newsletter@saasbriefings.com',
-      body: 'Here is your weekly summary of the fastest growing enterprise productivity tools and benchmark studies. To manage your email preferences or unsubscribe, click here.'
+      bodyTemplate: (name) => `Here is your weekly summary of the fastest growing enterprise productivity tools and benchmark studies. To manage your email preferences or unsubscribe, click here.`
     }
   ];
 
   if (!isOpen) return null;
 
+  const getEffectiveClientName = () => {
+    if (selectedClientId === '__new__' || clientList.length === 0) {
+      return customClientName.trim() || 'Alex Morgan';
+    }
+    return selectedClientId.trim() || (clientList[0]?.name || 'Alex Morgan');
+  };
+
   const handleApplyPreset = (preset) => {
+    const effName = getEffectiveClientName();
+    const firstName = effName.split(' ')[0] || 'there';
     setSubject(preset.subject);
     setSenderName(preset.senderName);
     setSenderEmail(preset.senderEmail);
-    setBody(preset.body);
+    setBody(preset.bodyTemplate(firstName));
   };
 
   const handleSubmit = async (e) => {
@@ -61,12 +88,12 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
     if (!subject.trim() || !body.trim()) return;
 
     setIsSubmitting(true);
-    const clientName = targetClient.trim() || 'Alex Morgan';
+    const clientName = getEffectiveClientName();
     const matchedClient = clientList.find(c => c.name === clientName);
     const emailSlug = clientName.toLowerCase().replace(/[^a-z0-9]/g, '.');
     const accountEmail = matchedClient?.email || `${emailSlug}@company.com`;
 
-    await onSimulate({
+    const success = await onSimulate({
       subject,
       senderName: senderName.trim() || 'Simulated Sender',
       senderEmail: senderEmail.trim() || 'sender@external.com',
@@ -75,7 +102,10 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
       body
     });
     setIsSubmitting(false);
-    onClose();
+
+    if (success !== false) {
+      onClose();
+    }
   };
 
   return (
@@ -88,7 +118,7 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
             </div>
             <div>
               <h2 className="text-base font-bold text-[#1f1f1f] font-poppins">Simulate Incoming Email</h2>
-              <p className="text-xs text-[#747775] font-lato">Test live AI reply responsibility triage & routing</p>
+              <p className="text-xs text-[#747775] font-lato">Test live AI reply responsibility triage & multi-account routing</p>
             </div>
           </div>
           <button
@@ -122,31 +152,52 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
         {/* Custom Input Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 mt-1">
           {clientList.length > 0 ? (
-            <div>
-              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Target Client / Recipient</label>
+            <div className="flex flex-col gap-2">
+              <label className="block text-xs font-semibold text-[#1f1f1f] font-poppins">
+                Target Executive Client / Account
+              </label>
               <select
-                value={targetClient}
-                onChange={(e) => setTargetClient(e.target.value)}
-                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] focus:outline-none focus:border-[#0b57d0] font-poppins"
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] focus:outline-none focus:border-[#0b57d0] font-poppins cursor-pointer"
               >
                 {clientList.map((c) => (
                   <option key={c.name} value={c.name}>
-                    👤 {c.name} ({c.role.split(',')[0]} - {c.email})
+                    👤 {c.name} ({c.role ? c.role.split(',')[0] : 'Client'} - {c.email})
                   </option>
                 ))}
+                <option value="__new__">➕ Simulate for a new client / account...</option>
               </select>
+
+              {selectedClientId === '__new__' && (
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    placeholder="Enter new executive's full name (e.g. Elena Fisher, Elon Musk)"
+                    value={customClientName}
+                    onChange={(e) => setCustomClientName(e.target.value)}
+                    className="w-full bg-white border border-[#0b57d0]/40 rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#0b57d0]/20 font-poppins"
+                    required
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div>
-              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">Target Client / Principal Name</label>
+              <label className="block text-xs font-semibold text-[#1f1f1f] mb-1 font-poppins">
+                Target Executive Client / Principal Name
+              </label>
               <input
                 type="text"
-                placeholder="e.g. Alex Morgan or your executive's name"
-                value={targetClient}
-                onChange={(e) => setTargetClient(e.target.value)}
+                placeholder="e.g. Alex Morgan, Elena Fisher, or your client's name"
+                value={customClientName}
+                onChange={(e) => setCustomClientName(e.target.value)}
                 className="w-full bg-[#f8fafd] border border-[#dadce0] rounded-xl px-3.5 py-2 text-sm text-[#1f1f1f] focus:outline-none focus:border-[#0b57d0] font-poppins"
                 required
               />
+              <span className="text-[11px] text-[#747775] block mt-1 font-lato">
+                The AI will automatically create this client account and file this simulated thread under their inbox.
+              </span>
             </div>
           )}
 
@@ -208,7 +259,7 @@ export default function SimulateEmailModal({ isOpen, onClose, onSimulate, client
             <button
               type="submit"
               disabled={isSubmitting || !subject.trim() || !body.trim()}
-              className="px-5 py-2.5 sm:py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center justify-center gap-1.5"
+              className="px-5 py-2.5 sm:py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] disabled:opacity-50 text-xs font-semibold font-poppins text-white shadow-sm transition flex items-center justify-center gap-1.5 min-h-[42px] sm:min-h-0"
             >
               <Send className="w-4 h-4" />
               <span>{isSubmitting ? 'Analyzing with AI...' : 'Simulate & Run AI Triage'}</span>

@@ -67,7 +67,10 @@ router.get('/', async (req, res) => {
             query.category = 'Action Required';
             break;
           case 'waiting_response':
-            query.category = 'Waiting for Response';
+            query.$or = [
+              { category: 'Waiting for Response' },
+              { 'replyDraft.status': 'sent' }
+            ];
             break;
           case 'meetings':
             query.$or = [
@@ -324,7 +327,8 @@ router.patch('/:id/toggle', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Email thread not found' });
     }
 
-    if (field === 'isRead') email.isRead = !email.isRead;
+    if (field === 'markRead') email.isRead = true;
+    else if (field === 'isRead') email.isRead = !email.isRead;
     if (field === 'isStarred') email.isStarred = !email.isStarred;
     if (field === 'isImportant') email.isImportant = !email.isImportant;
     if (field === 'archive') {
@@ -349,7 +353,8 @@ router.post('/simulate', async (req, res) => {
       clientName = 'Alex Morgan',
       accountEmail,
       provider = 'gmail',
-      customClientName
+      customClientName,
+      role = 'Executive Client'
     } = req.body;
 
     if (customClientName) {
@@ -363,20 +368,33 @@ router.post('/simulate', async (req, res) => {
     }
 
     // Ensure client account exists for this assistant user
-    if (req.userId && clientName && accountEmail) {
-      await Account.findOneAndUpdate(
-        { userId: req.userId, clientName },
-        {
+    let account = null;
+    if (req.userId && (clientName || accountEmail)) {
+      account = await Account.findOne({
+        userId: req.userId,
+        $or: [
+          ...(clientName ? [{ clientName }] : []),
+          ...(accountEmail ? [{ email: accountEmail }] : [])
+        ]
+      });
+
+      if (account) {
+        account.email = accountEmail;
+        account.clientName = clientName;
+        account.status = 'connected';
+        account.lastSyncedAt = new Date();
+        await account.save();
+      } else {
+        account = await Account.create({
           userId: req.userId,
           email: accountEmail,
-          provider,
+          provider: provider === 'outlook' ? 'outlook' : 'gmail',
           clientName,
-          role: 'Executive Client',
+          role,
           status: 'connected',
           lastSyncedAt: new Date()
-        },
-        { upsert: true, returnDocument: 'after' }
-      );
+        });
+      }
     }
 
     const emailData = {
@@ -430,7 +448,7 @@ router.post('/simulate', async (req, res) => {
       meta: { classification: newEmail.classification, confidence: newEmail.confidence }
     });
 
-    res.status(201).json({ success: true, email: newEmail, message: 'Incoming email received and analyzed by AI' });
+    res.status(201).json({ success: true, email: newEmail, account, message: 'Incoming email received and analyzed by AI' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

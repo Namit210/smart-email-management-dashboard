@@ -206,7 +206,7 @@ export default function ClientSidebar({
   return (
     <>
       {/* Desktop Sticky Right Panel (xl and up) */}
-      <aside className="hidden xl:flex w-80 2xl:w-96 flex-shrink-0 border-l border-[#eaedf1] flex-col h-[calc(100vh-65px)] sticky top-[65px] shadow-xs">
+      <aside className="hidden xl:flex w-80 2xl:w-96 flex-shrink-0 border-l border-[#eaedf1] flex-col h-[calc(100vh-82px)] sticky top-[70px] self-start shadow-xs">
         {panelContent}
       </aside>
 

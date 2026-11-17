@@ -34,13 +34,13 @@ export default function Sidebar({
     { id: 'meetings', label: 'Meetings to Schedule', icon: Calendar, count: stats?.meetingsCount, badgeColor: 'bg-[#c4eed0] text-[#0f5223]' },
     { id: 'action_required', label: 'Urgent Action Items', icon: AlertCircle, count: stats?.urgentCount, badgeColor: 'bg-[#f9dedc] text-[#b3261e]' },
     { id: 'no_reply_needed', label: 'No Reply Needed', icon: CheckCheck, count: stats?.noReplyNeededCount, badgeColor: 'bg-[#eaedf1] text-[#444746]' },
-    { id: 'waiting_response', label: 'Waiting for External Reply', icon: Clock, count: 2, badgeColor: 'bg-[#eaedf1] text-[#444746]' },
-    { id: 'starred', label: 'Starred & VIP', icon: Star, count: null },
-    { id: 'archived', label: 'Archived', icon: Archive, count: null }
+    { id: 'waiting_response', label: 'Waiting for External Reply', icon: Clock, count: stats?.waitingResponseCount, badgeColor: 'bg-[#eaedf1] text-[#444746]' },
+    { id: 'starred', label: 'Starred & VIP', icon: Star, count: stats?.starredCount },
+    { id: 'archived', label: 'Archived', icon: Archive, count: stats?.archivedCount }
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col gap-4 p-3 sm:p-1 h-full overflow-y-auto">
+    <div className="flex flex-col gap-4 p-3 sm:p-1 h-full overflow-y-auto pr-1">
       {/* Mobile Drawer Top Bar with Brand and Close Button */}
       <div className="flex items-center justify-between pb-2 border-b border-[#eaedf1] lg:hidden">
         <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export default function Sidebar({
                 <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#0b57d0]' : 'text-[#5e5e5e]'}`} />
                 <span className="truncate">{item.label}</span>
               </div>
-              {item.count !== null && item.count !== undefined && (
+              {typeof item.count === 'number' && item.count > 0 && (
                 <span
                   className={`text-xs px-2.5 py-0.5 rounded-full font-medium ml-2 ${
                     isActive
@@ -194,8 +194,8 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Desktop Persistent Left Sidebar (lg and up) */}
-      <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col">
+      {/* Desktop Persistent Left Sidebar (lg and up) - Static & Sticky to Viewport */}
+      <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col sticky top-[70px] h-[calc(100vh-82px)] self-start">
         {sidebarContent}
       </aside>
 

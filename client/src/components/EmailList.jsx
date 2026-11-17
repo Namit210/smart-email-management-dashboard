@@ -9,7 +9,10 @@ import {
   Inbox,
   User,
   Sparkles,
-  Plus
+  Plus,
+  CheckCircle2,
+  Check,
+  MessageSquare
 } from 'lucide-react';
 
 export default function EmailList({
@@ -260,6 +263,26 @@ export default function EmailList({
                       <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         {getBadge(email.classification, email.confidence, email.manualOverride)}
                       </div>
+
+                      {/* Client Decision Badge if Handled / Approved / Delegated */}
+                      {email.clientAttention?.handled && (
+                        email.clientAttention?.clientDecision === 'approved' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#c4eed0] text-[#0f5223] border border-[#a8dab5] whitespace-nowrap flex-shrink-0 font-poppins shadow-2xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#1e8e3e] flex-shrink-0" />
+                            <span>✓ Approved by {email.clientName?.split(' ')[0] || 'Client'}</span>
+                          </span>
+                        ) : email.clientAttention?.delegatedToAssistant ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#d3e3fd] text-[#041e49] border border-[#b8d4fb] whitespace-nowrap flex-shrink-0 font-poppins shadow-2xs">
+                            <MessageSquare className="w-3.5 h-3.5 text-[#0b57d0] flex-shrink-0" />
+                            <span>Delegated to You</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#eaedf1] text-[#444746] border border-[#dadce0] whitespace-nowrap flex-shrink-0 font-poppins">
+                            <Check className="w-3.5 h-3.5 text-[#1e8e3e] flex-shrink-0" />
+                            <span>Handled</span>
+                          </span>
+                        )
+                      )}
 
                       {/* Client Stamp (Alex, Sarah, Marcus) */}
                       {email.clientName && (

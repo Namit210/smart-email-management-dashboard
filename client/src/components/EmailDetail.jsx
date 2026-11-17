@@ -17,7 +17,9 @@ import {
   User,
   Shield,
   ChevronDown,
-  Trash2
+  Trash2,
+  Check,
+  MessageSquare
 } from 'lucide-react';
 
 export default function EmailDetail({
@@ -181,15 +183,77 @@ export default function EmailDetail({
           </div>
         </div>
 
+        {/* Executive Decision Banner (Visible to Assistant when Client Approves / Delegates) */}
+        {email.clientAttention?.handled && (
+          <div className={`p-4 rounded-2xl border flex items-start gap-3 shadow-xs font-poppins transition-all ${
+            email.clientAttention?.clientDecision === 'approved'
+              ? 'bg-[#e6f4ea] border-[#a8dab5] text-[#0f5223]'
+              : email.clientAttention?.delegatedToAssistant
+              ? 'bg-[#eaf1fb] border-[#c2e7ff] text-[#041e49]'
+              : 'bg-[#f0f4f9] border-[#eaedf1] text-[#1f1f1f]'
+          }`}>
+            <div className={`p-2 rounded-xl text-white flex-shrink-0 ${
+              email.clientAttention?.clientDecision === 'approved'
+                ? 'bg-[#1e8e3e]'
+                : email.clientAttention?.delegatedToAssistant
+                ? 'bg-[#0b57d0]'
+                : 'bg-[#5e5e5e]'
+            }`}>
+              {email.clientAttention?.clientDecision === 'approved' ? (
+                <CheckCircle2 className="w-5 h-5" />
+              ) : email.clientAttention?.delegatedToAssistant ? (
+                <MessageSquare className="w-5 h-5" />
+              ) : (
+                <Check className="w-5 h-5" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-sm sm:text-base">
+                  {email.clientAttention?.clientDecision === 'approved'
+                    ? `✓ Executive Approval Granted by ${email.clientName || 'Client'}`
+                    : email.clientAttention?.delegatedToAssistant
+                    ? `Delegated to You by ${email.clientName || 'Client'}`
+                    : `Marked Handled by ${email.clientName || 'Client'}`}
+                </span>
+                {email.clientAttention?.handledAt && (
+                  <span className="text-[11px] opacity-75 font-lato whitespace-nowrap">
+                    {new Date(email.clientAttention.handledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm mt-1 leading-relaxed opacity-90 font-lato">
+                {email.clientAttention?.clientDecision === 'approved'
+                  ? `${email.clientName || 'Your executive'} reviewed and quick-approved this request in the Executive Portal. You are now authorized to send the response or execute next steps.`
+                  : email.clientAttention?.delegatedNote
+                  ? `Client instruction for you: "${email.clientAttention.delegatedNote}"`
+                  : 'Your principal addressed this conversation directly.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* AI Reply Responsibility Diagnostic Card (Material 3 Style) */}
         <div className="p-3.5 sm:p-4 rounded-2xl bg-[#f0f4f9] border border-[#d3e3fd] flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div className="flex items-center gap-2">
-              <div className="p-1 rounded-full bg-[#0b57d0] text-white">
-                <Sparkles className="w-3.5 h-3.5" />
+              <div className={`p-1 rounded-full text-white ${
+                email.clientAttention?.handled && email.clientAttention?.clientDecision === 'approved'
+                  ? 'bg-[#1e8e3e]'
+                  : 'bg-[#0b57d0]'
+              }`}>
+                {email.clientAttention?.handled && email.clientAttention?.clientDecision === 'approved' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
               </div>
               <span className="text-xs font-bold uppercase tracking-wide text-[#041e49] font-poppins">
-                {email.classification === 'assistant_reply'
+                {email.clientAttention?.handled && email.clientAttention?.clientDecision === 'approved'
+                  ? `Approved by ${email.clientName || 'Client'} (Ready for Assistant Execution)`
+                  : email.clientAttention?.handled && email.clientAttention?.delegatedToAssistant
+                  ? `Delegated to Assistant by ${email.clientName || 'Client'}`
+                  : email.classification === 'assistant_reply'
                   ? `Assistant Action Required (on behalf of ${email.clientName || 'Client'})`
                   : email.classification === 'client_reply'
                   ? `Escalate to ${email.clientName || 'Client'} (Executive Signature / Sign-Off Needed)`

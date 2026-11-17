@@ -23,6 +23,18 @@ router.get('/', async (req, res) => {
     const needsReviewCount = await Email.countDocuments({ ...baseFilter, classification: 'needs_review' });
     const meetingsCount = await Email.countDocuments({ ...baseFilter, 'extractedMeeting.detected': true });
     const urgentCount = await Email.countDocuments({ ...baseFilter, urgency: 'urgent' });
+    const waitingResponseCount = await Email.countDocuments({
+      ...baseFilter,
+      $or: [
+        { category: 'Waiting for Response' },
+        { 'replyDraft.status': 'sent' }
+      ]
+    });
+    const starredCount = await Email.countDocuments({ ...baseFilter, isStarred: true });
+    const archivedFilter = { status: 'archived' };
+    if (req.userId) archivedFilter.userId = req.userId;
+    if (client && client !== 'all') archivedFilter.clientName = client;
+    const archivedCount = await Email.countDocuments(archivedFilter);
 
     // Calculate live average AI confidence from real MongoDB records
     const avgConfidenceResult = await Email.aggregate([
@@ -56,6 +68,9 @@ router.get('/', async (req, res) => {
         needsReviewCount,
         meetingsCount,
         urgentCount,
+        waitingResponseCount,
+        starredCount,
+        archivedCount,
         confidenceAverage,
         aiAutomatedRate
       },
